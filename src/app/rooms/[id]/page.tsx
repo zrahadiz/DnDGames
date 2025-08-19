@@ -60,13 +60,16 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen px-4 py-10 bg-gray-100  flex flex-col">
-      {/* Head Title*/}
+    <div className="h-screen px-4 py-4 bg-gray-100 flex flex-col">
+      {/* Header */}
       <h1 className="text-2xl font-bold text-center mb-4">
         🧙 DnD Online Room - (title)
       </h1>
-      <div className=" grid grid-flow-col grid-rows-12 grid-cols-12 flex-1">
-        <div className="row-span-12 col-span-3 justify-center flex">
+
+      {/* Main Grid */}
+      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+        {/* Left Column */}
+        <div className="col-span-12 md:col-span-3 flex justify-center">
           <div className="flex flex-col justify-between gap-4 w-2/3">
             <CardHero
               image={character3}
@@ -75,17 +78,20 @@ export default function Home() {
             />
             <CardHero
               image={character2}
-              name="Player 1"
+              name="Player 2"
               role="Mage - Level 5"
             />
           </div>
         </div>
-        <div className="row-span-12 col-span-6 justify-between flex flex-col">
-          {/* Chat Area */}
-          <div className="w-full h-full bg-white shadow-lg rounded-xl p-4 flex flex-col">
+
+        {/* Middle Column (Chat Area) */}
+        <div className="col-span-12 md:col-span-6 flex flex-col min-h-0">
+          <div className="flex flex-col bg-white shadow-lg rounded-xl p-4 h-full min-h-0">
+            {/* Chat Header */}
             <h1 className="text-xl font-bold mb-4">The Arena</h1>
 
-            <div className="flex-1 overflow-y-auto mb-4 space-y-2">
+            {/* Messages */}
+            <div className="flex-1 min-h-0 overflow-y-auto mb-4 space-y-2">
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
@@ -118,16 +124,18 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="row-span-12 col-span-3 justify-center flex">
+
+        {/* Right Column */}
+        <div className="col-span-12 md:col-span-3 flex justify-center">
           <div className="flex flex-col justify-between gap-4 w-2/3">
             <CardHero
               image={character3}
-              name="Player 1"
+              name="Player 3"
               role="Knight - Level 5"
             />
             <CardHero
               image={character2}
-              name="Player 1"
+              name="Player 4"
               role="Mage - Level 5"
             />
           </div>
