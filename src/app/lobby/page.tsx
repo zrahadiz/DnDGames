@@ -1,20 +1,82 @@
 "use client";
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import api from "@/lib/axios";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Home() {
   const [search, setSearch] = useState("");
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [step, setStep] = useState(1);
+  const [roomInput, setRoomInput] = useState({
+    title: "",
+    theme: "",
+    password: "",
+    max_players: 0,
+    character_name: "",
+    character_class: "",
+  });
 
-  const rooms = [
-    { id: 1, name: "Room A", genre: "Fantasy", players: 2, maxPlayers: 4 },
-    { id: 2, name: "Room B", genre: "Sci-Fi", players: 3, maxPlayers: 4 },
-    { id: 3, name: "Room C", genre: "Horror", players: 1, maxPlayers: 4 },
-    { id: 4, name: "Room D", genre: "Mystery", players: 4, maxPlayers: 4 },
-  ];
+  useEffect(() => {
+    api
+      .get("/rooms")
+      .then((res) => {
+        console.log("res: ", res.data);
+        setRooms(res.data);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
-  const filtered = rooms.filter((r) =>
-    r.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const prev = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const createRoom = () => {
+    if (step == 1) {
+      setStep(step + 1);
+    } else {
+      api
+        .post("/rooms/create", roomInput)
+        .then((res) => {
+          console.log("Room created: ", res.data);
+          // setRooms([...rooms, res.data.room]);
+        })
+        .catch((err) => console.error(err));
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    console.log(e.target);
+    setRoomInput((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
+  // const rooms = [
+  //   { id: 1, name: "Room A", genre: "Fantasy", players: 2, maxPlayers: 4 },
+  //   { id: 2, name: "Room B", genre: "Sci-Fi", players: 3, maxPlayers: 4 },
+  //   { id: 3, name: "Room C", genre: "Horror", players: 1, maxPlayers: 4 },
+  //   { id: 4, name: "Room D", genre: "Mystery", players: 4, maxPlayers: 4 },
+  // ];
+
+  // const filtered = rooms.filter((r) =>
+  //   r.name.toLowerCase().includes(search.toLowerCase())
+  // );
 
   return (
     <div
@@ -55,8 +117,91 @@ export default function Home() {
           </div>
         </div>
 
+        <div className="absolute bottom-10 right-10">
+          <Dialog>
+            <form>
+              <DialogTrigger asChild>
+                <Button variant="outline">Create Room</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create Room</DialogTitle>
+                  <DialogDescription>
+                    Configure your room as your wish.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid w-full max-w-sm items-center gap-3">
+                  {step === 1 ? (
+                    <>
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        type="title"
+                        id="title"
+                        placeholder="title"
+                        value={roomInput.title}
+                        onChange={handleChange}
+                      />
+                      <Label htmlFor="theme">Theme</Label>
+                      <Input
+                        type="theme"
+                        id="theme"
+                        placeholder="theme"
+                        value={roomInput.theme}
+                        onChange={handleChange}
+                      />
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        type="password"
+                        id="password"
+                        placeholder="password"
+                        value={roomInput.password}
+                        onChange={handleChange}
+                      />
+                      <Label htmlFor="max_player">Max Player</Label>
+                      <Input
+                        type="number"
+                        id="max_players"
+                        placeholder="max_players"
+                        value={roomInput.max_players}
+                        onChange={handleChange}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Label htmlFor="character_name">Character Name</Label>
+                      <Input
+                        type="text"
+                        id="character_name"
+                        placeholder="name"
+                        value={roomInput.character_name}
+                        onChange={handleChange}
+                      />
+                      <Label htmlFor="character_class">Character Class</Label>
+                      <Input
+                        type="text"
+                        id="character_class"
+                        placeholder="class"
+                        value={roomInput.character_class}
+                        onChange={handleChange}
+                      />
+                    </>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" disabled={step == 1} onClick={prev}>
+                    Prev
+                  </Button>
+                  <Button onClick={createRoom}>
+                    {step == 1 ? "Next" : "Create Room"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </form>
+          </Dialog>
+        </div>
+
         {/* Daftar Room */}
-        <main className="container mx-auto px-4 py-8">
+        {/* <main className="container mx-auto px-4 py-8">
           {filtered.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {filtered.map((room) => (
@@ -89,7 +234,7 @@ export default function Home() {
           ) : (
             <p className="text-center text-white">Room tidak ditemukan...</p>
           )}
-        </main>
+        </main> */}
       </div>
     </div>
   );
