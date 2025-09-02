@@ -6,6 +6,7 @@ import {
   text,
   integer,
   timestamp,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 // ----------------- Users -----------------
@@ -20,9 +21,10 @@ export const rooms = pgTable("rooms", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 100 }).notNull(),
   theme: varchar("theme", { length: 50 }).notNull(),
-  password: varchar("password", { length: 255 }).default("").notNull(), // increase length if hashing
+  password: varchar("password", { length: 255 }).default("").notNull(),
   max_players: integer("max_players").notNull().default(5),
-  status: varchar("status", { length: 20 }).notNull().default("waiting"), // waiting, in-game
+  status: varchar("status", { length: 20 }).notNull().default("waiting"),
+  host_id: integer("host_id").references(() => users.id),
   created_at: timestamp("created_at").defaultNow(),
 });
 
@@ -38,6 +40,8 @@ export const room_players = pgTable("room_players", {
   character_name: varchar("character_name", { length: 50 }).notNull(),
   character_class: varchar("character_class", { length: 50 }).notNull(),
   level: integer("level").default(1),
+  is_ready: boolean("is_ready").notNull().default(false),
+  last_seen_at: timestamp("last_seen_at").defaultNow().notNull(),
 });
 
 // Optional: prevent same user joining same room twice

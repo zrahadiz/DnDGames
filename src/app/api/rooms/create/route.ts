@@ -1,7 +1,7 @@
 // /pages/api/rooms/create.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { rooms, room_players, users } from "@/db/schema";
+import { rooms, room_players, users, messages } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
@@ -55,7 +55,16 @@ export async function POST(req: Request) {
       })
       .returning();
 
-    return NextResponse.json({ room: newRoom, player }, { status: 201 });
+    const merged = {
+      ...newRoom,
+      player,
+    };
+    console.log(merged);
+
+    return NextResponse.json(
+      { data: merged, messages: "Room Has been created", status: 201 },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(

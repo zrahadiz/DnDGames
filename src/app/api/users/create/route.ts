@@ -1,7 +1,7 @@
 // /pages/api/rooms/create.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { messages, users } from "@/db/schema";
 
 export async function POST(req: Request) {
   const { username } = await req.json();
@@ -18,7 +18,10 @@ export async function POST(req: Request) {
     // Create the room
     const Users = await db.insert(users).values({ username }).returning();
 
-    return NextResponse.json({ user: Users }, { status: 201 });
+    return NextResponse.json(
+      { data: Users, messages: "Account has been created" },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(

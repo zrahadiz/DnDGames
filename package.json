@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:socket": "ts-node -r tsconfig-paths/register --project tsconfig.socket.json ./src/server/socket.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -17,17 +18,20 @@
     "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.1",
     "lucide-react": "^0.540.0",
     "next": "15.4.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.11",
     "@types/pg": "^8.15.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -35,7 +39,9 @@
     "drizzle-orm": "^0.44.4",
     "pg": "^8.16.3",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "tw-animate-css": "^1.3.7",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   }
 }
