@@ -41,6 +41,7 @@ export async function POST(req: Request) {
         password: password || "",
         max_players: max_players || 5,
         status: "waiting",
+        host_id: user_id,
       })
       .returning();
 

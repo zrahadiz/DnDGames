@@ -137,6 +137,10 @@ export default function Home() {
       const { data } = await api.post("/rooms/create", roomInput);
       console.log("Room created: ", data.data);
       fetchRooms();
+      socket.emit("join_room", {
+        roomId: data.data.id,
+        userId: roomInput.user_id,
+      });
       setCreateRoomDialog(false);
       router.push("/waiting-room/" + data.data.id);
     } catch (error) {
@@ -169,9 +173,6 @@ export default function Home() {
         roomId: joinRoomInput.room_id,
         userId: joinRoomInput.user_id,
       });
-      socket.on("room_update", (data) => {
-        console.log("Updated participants:", data.participants);
-      });
       console.log("Joined Room: ", response.data);
       router.push("/waiting-room/" + joinRoomInput.room_id);
     } catch (error) {
@@ -190,10 +191,6 @@ export default function Home() {
     fetchRooms();
     socket.on("connect", () => {
       console.log("connected:", socket.id);
-    });
-
-    socket.on("room_update", (data) => {
-      console.log("room updated:", data);
     });
 
     socket.on("error_message", (msg) => {

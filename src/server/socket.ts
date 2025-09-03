@@ -1,8 +1,10 @@
 import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
-import { room_players } from "@/db/schema";
+import { room_players, rooms } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { use } from "react";
+import { disconnect } from "process";
 
 const io = new Server(3001, {
   cors: { origin: "*" }, // later: set to your frontend URL
@@ -17,32 +19,7 @@ io.on("connection", (socket) => {
 
   socket.on("test", async ({ roomId, userId }) => {
     console.log("DATABASE_URL:", process.env.DATABASE_URL);
-    if (!roomId || !userId) {
-      console.error("join_room missing roomId or userId", { roomId, userId });
-      return;
-    }
-
-    const roomKey = `room_${roomId}`;
-    socket.join(roomKey);
-    socketUserMap.set(socket.id, { roomId, userId });
-
-    try {
-      const player = await db.query.room_players.findFirst({
-        where: eq(room_players.user_id, userId),
-      });
-
-      if (!player) {
-        console.warn("Player not found in DB:", userId);
-        return;
-      }
-
-      io.to(roomKey).emit("room_update", {
-        type: "player_joined",
-        player,
-      });
-    } catch (err) {
-      console.error("Drizzle query failed for join_room:", err);
-    }
+    console.log("Test event received:", { roomId, userId });
   });
   // join room
   socket.on("join_room", async ({ roomId, userId }) => {
@@ -70,8 +47,54 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("disconnect", () => {
+  // leave room
+  socket.on("leave_room", async ({ roomId, userId }) => {
+    console.log("leave_room event", { roomId, userId });
+    if (!roomId || !userId) {
+      console.error("leave_room missing roomId or userId", { roomId, userId });
+      return;
+    }
+    console.log(`User ${userId} leaving room ${roomId}`);
+    const roomKey = `room_${roomId}`;
+    socket.leave(roomKey);
+    socketUserMap.delete(socket.id);
+    io.to(roomKey).emit("room_update", {
+      type: "player_left",
+      user_id: userId,
+      disconnected: false,
+    });
+  });
+
+  socket.on("disconnect", async () => {
     console.log("User disconnected:", socket.id);
+    const userMap = socketUserMap.get(socket.id);
+    console.log("Socket user map:", socketUserMap);
+    console.log("Disconnected user info:", userMap);
+    // If the user was tracked, handle their departure
+    if (userMap) {
+      // Remove the player from the database
+      await db
+        .delete(room_players)
+        .where(
+          and(
+            eq(room_players.room_id, userMap.roomId),
+            eq(room_players.user_id, userMap.userId)
+          )
+        );
+      const roomKey = `room_${userMap.roomId}`;
+      console.log(
+        `User ${userMap.userId} disconnected, removed from room ${userMap.roomId}`
+      );
+      // Emit an update to the room to remove the player from the UI
+      io.to(roomKey).emit("room_update", {
+        type: "player_left",
+        user_id: userMap.roomId,
+        disconnected: true,
+      });
+
+      // Clean up the map
+      socketUserMap.delete(socket.id);
+    }
   });
 });
 

@@ -41,6 +41,10 @@ export async function POST(req: Request) {
       .where(eq(room_players.room_id, room_id))
       .then((res) => res.length);
 
+    console.log("Room ID to join: ", room_id);
+
+    console.log("Current player count: ", playerCount);
+    console.log("Room max players: ", room.max_players);
     if (playerCount >= room.max_players) {
       return NextResponse.json({ error: "Room is full" }, { status: 400 });
     }
@@ -63,6 +67,15 @@ export async function POST(req: Request) {
         { error: "User already in the room" },
         { status: 400 }
       );
+    }
+
+    // check if room has host
+    if (!room.host_id) {
+      // If no host, set the joining user as host
+      await db
+        .update(rooms)
+        .set({ host_id: user_id })
+        .where(eq(rooms.id, room_id));
     }
 
     // Add player to the room
