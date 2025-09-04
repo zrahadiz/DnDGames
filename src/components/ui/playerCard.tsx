@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 interface PlayerCardProps {
   name: string;
-  status: "Waiting" | "Ready" | "Playing";
+  status: "Waiting" | "Ready" | "Host";
   avatarUrl: StaticImageData | string;
 }
 
@@ -12,7 +12,7 @@ export function PlayerCard({ name, status, avatarUrl }: PlayerCardProps) {
   const statusColor =
     status === "Ready"
       ? "bg-green-500"
-      : status === "Playing"
+      : status === "Host"
       ? "bg-blue-500"
       : "bg-gray-400"; // Waiting
 
@@ -34,9 +34,7 @@ export function PlayerCard({ name, status, avatarUrl }: PlayerCardProps) {
         <p className="text-white text-lg font-bold drop-shadow-md truncate">
           {name}
         </p>
-        <span
-          className={`text-xs px-2 py-1 rounded-full text-white ${statusColor}`}
-        >
+        <span className={`text-xs px-2 py-1 rounded text-white ${statusColor}`}>
           {status}
         </span>
       </div>

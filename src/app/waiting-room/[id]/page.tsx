@@ -11,6 +11,8 @@ import Loading from "@/components/ui/loading";
 import { LogOut } from "lucide-react";
 
 import { useRouter, usePathname } from "next/navigation";
+import { set } from "react-hook-form";
+import { is } from "drizzle-orm";
 
 export default function WaitingRoom() {
   interface Player {
@@ -42,6 +44,7 @@ export default function WaitingRoom() {
   const [players, setPlayers] = useState<any[]>([]);
   const [userId, setUserId] = useState<Number | null>(null);
   const [hostPlayer, setHostPlayer] = useState(false);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
@@ -115,45 +118,28 @@ export default function WaitingRoom() {
       setLoadingState(true);
       setLoadingText("Starting game...");
       try {
-        const response = await api.post("/rooms/start", {
-          room_id: id,
-          user_id: currentUserId,
+        socket.emit("start_game", {
+          roomId: id,
+          userId: currentUserId,
         });
-        console.log("Game started:", response.data);
-        // Optionally, you can redirect to the game page or update the UI accordingly
+        router.replace(`/game/${id}`);
       } catch (error) {
         console.error("Error starting game:", error);
       } finally {
         setLoadingState(false);
         setLoadingText("");
       }
-    } else if (currentUserPlayer.is_ready) {
-      // Non-host is toggling to ready state
-      setLoadingState(true);
-      setLoadingText("Updating status...");
-      try {
-        const response = await api.post("/rooms/toggle-ready", {
-          room_id: id,
-          user_id: currentUserId,
-        });
-        console.log("Ready status toggled:", response.data);
-        // Optionally, update the player's ready status in the UI
-      } catch (error) {
-        console.error("Error toggling ready status:", error);
-      } finally {
-        setLoadingState(false);
-        setLoadingText("");
-      }
     } else {
-      // Non-host is toggling to unready state
+      // Non-host is toggling to ready state
+      console.log("Toggling ready state for player");
       setLoadingState(true);
       setLoadingText("Updating status...");
       try {
-        const response = await api.post("/rooms/toggle-ready", {
-          room_id: id,
-          user_id: currentUserId,
+        socket.emit("toggle_ready", {
+          roomId: id,
+          userId: currentUserId,
+          isReady: !currentUserPlayer?.is_ready,
         });
-        console.log("Ready status toggled:", response.data);
         // Optionally, update the player's ready status in the UI
       } catch (error) {
         console.error("Error toggling ready status:", error);
@@ -173,12 +159,6 @@ export default function WaitingRoom() {
     console.log("Setting up socket listeners");
     socket.on("room_update", (update) => {
       console.log("Room update received:", update);
-
-      // if (update.type === "player_left" && update.user_id === userId) {
-      //   // 👇 kick only yourself back to lobby
-      //   router.push("/lobby");
-      // }
-
       if (update.type === "player_joined" && update.player) {
         setPlayers((prevPlayers) => {
           // Check if the player already exists
@@ -210,6 +190,15 @@ export default function WaitingRoom() {
         } else {
           fetchRooms();
         }
+      } else if (update.type === "player_toggled_ready" && update.player) {
+        setPlayers((prevPlayers) =>
+          prevPlayers.map((p) =>
+            p.user_id === update.player.user_id
+              ? { ...p, is_ready: update.player.is_ready }
+              : p
+          )
+        );
+        setIsPlayerReady(update.player.is_ready);
       } else {
         console.warn("Unknown room update type:", update);
       }
@@ -235,7 +224,7 @@ export default function WaitingRoom() {
     const readyPlayersCount = players.filter(
       (player) => player.is_ready
     ).length;
-    const totalPlayersCount = players.length;
+    const totalPlayersCount = players.length - 1;
 
     const isDisabled = readyPlayersCount !== totalPlayersCount && isHost;
 
@@ -275,7 +264,13 @@ export default function WaitingRoom() {
               <PlayerCard
                 key={player.id}
                 name={player.character_name}
-                status={player.is_ready ? "Ready" : "Waiting"}
+                status={
+                  player.user_id == room?.host_id
+                    ? "Host"
+                    : player.is_ready
+                    ? "Ready"
+                    : "Waiting"
+                }
                 avatarUrl={lavaKnight}
               />
               // <li key={player.id}>{player.character_name}</li>
@@ -291,10 +286,8 @@ export default function WaitingRoom() {
           >
             {hostPlayer
               ? "Start Game"
-              : players.find((player) => {
-                  player.user_id === userId && player.is_ready;
-                })
-              ? "Unready"
+              : isPlayerReady
+              ? "Unready" // 👈 change this
               : "Ready"}
           </Button>
         </div>

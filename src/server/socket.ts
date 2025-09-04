@@ -47,6 +47,32 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("toggle_ready", async ({ roomId, userId, isReady }) => {
+    console.log("toggle_ready event", { roomId, userId, isReady });
+    if (!roomId || !userId || isReady === undefined) {
+      console.error("toggle_ready missing params", { roomId, userId, isReady });
+      return;
+    }
+    const roomKey = `room_${roomId}`;
+    // Update in DB
+    await db
+      .update(room_players)
+      .set({ is_ready: isReady })
+      .where(
+        and(eq(room_players.room_id, roomId), eq(room_players.user_id, userId))
+      );
+    const updatedPlayer = await db.query.room_players.findFirst({
+      where: and(
+        eq(room_players.user_id, userId),
+        eq(room_players.room_id, roomId)
+      ),
+    });
+    io.to(roomKey).emit("room_update", {
+      type: "player_toggled_ready",
+      player: updatedPlayer, // full player object
+    });
+  });
+
   // leave room
   socket.on("leave_room", async ({ roomId, userId }) => {
     console.log("leave_room event", { roomId, userId });
