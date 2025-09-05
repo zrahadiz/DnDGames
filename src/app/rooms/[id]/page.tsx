@@ -25,7 +25,6 @@ export default function Home() {
     // Add player message
     setMessages((prev) => [...prev, { role: "player", text: input }]);
 
-    // Call AI API (for now: fake AI response)
     const res = await fetch("/api/ai", {
       method: "POST",
       body: JSON.stringify({ prompt: input }),

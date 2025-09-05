@@ -43,7 +43,7 @@ export default function Home() {
     title: "",
     theme: "",
     password: "",
-    max_players: 0,
+    max_players: 1,
     user_id: 0,
     character_name: "",
     character_class: "",
@@ -193,7 +193,7 @@ export default function Home() {
       console.log("connected:", socket.id);
     });
 
-    socket.on("error_message", (msg) => {
+    socket.on("error_message", (msg: string) => {
       console.error("socket error:", msg);
     });
   }, []);

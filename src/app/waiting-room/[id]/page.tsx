@@ -13,6 +13,7 @@ import { LogOut } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { set } from "react-hook-form";
 import { is } from "drizzle-orm";
+import axios from "axios";
 
 export default function WaitingRoom() {
   interface Player {
@@ -45,6 +46,7 @@ export default function WaitingRoom() {
   const [userId, setUserId] = useState<Number | null>(null);
   const [hostPlayer, setHostPlayer] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
@@ -118,11 +120,17 @@ export default function WaitingRoom() {
       setLoadingState(true);
       setLoadingText("Starting game...");
       try {
+        setAiPrompt(
+          `Bisakah kamu berperan sebagai room master dari permainan Dungeon and Dragon (DnD), Temanya adalah Medieval dan yang bermain adalah 2 orang, dengan nama character Rudo, Sebastian dan role Knight, Magician. Jika bisa tolong langsung respon dengan skenarionya saja`
+        );
+        console.log(aiPrompt);
+        const initAI = await api.post("ai", { prompt: "asd" });
+        console.log(initAI);
         socket.emit("start_game", {
           roomId: id,
           userId: currentUserId,
         });
-        router.replace(`/game/${id}`);
+        // router.replace(`/rooms/${id}`);
       } catch (error) {
         console.error("Error starting game:", error);
       } finally {
@@ -199,6 +207,8 @@ export default function WaitingRoom() {
           )
         );
         setIsPlayerReady(update.player.is_ready);
+      } else if (update.type === "game_started") {
+        router.replace(`/rooms/${id}`);
       } else {
         console.warn("Unknown room update type:", update);
       }

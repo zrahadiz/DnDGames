@@ -91,6 +91,23 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("start_game", async ({ roomId }) => {
+    console.log("start_game event", { roomId });
+    if (!roomId) {
+      console.error("start_game missing roomId", { roomId });
+      return;
+    }
+    const roomKey = `room_${roomId}`;
+    // Update room status in DB
+    await db
+      .update(rooms)
+      .set({ status: "in_game" })
+      .where(eq(rooms.id, roomId));
+    io.to(roomKey).emit("room_update", {
+      type: "game_started",
+    });
+  });
+
   socket.on("disconnect", async () => {
     console.log("User disconnected:", socket.id);
     const userMap = socketUserMap.get(socket.id);
