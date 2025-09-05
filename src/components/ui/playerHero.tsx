@@ -32,8 +32,8 @@ export function CardHero({ image, name, role }: CardHeroProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <CardTitle>{name}</CardTitle>
-        <CardDescription>{role}</CardDescription>
+        <CardTitle className="truncate">{name}</CardTitle>
+        <CardDescription className="truncate">{role}</CardDescription>
       </CardContent>
       <CardFooter>
         <CardAction className="w-full">

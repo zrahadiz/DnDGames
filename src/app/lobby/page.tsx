@@ -137,10 +137,10 @@ export default function Home() {
       const { data } = await api.post("/rooms/create", roomInput);
       console.log("Room created: ", data.data);
       fetchRooms();
-      socket.emit("join_room", {
-        roomId: data.data.id,
-        userId: roomInput.user_id,
-      });
+      // socket.emit("join_room", {
+      //   roomId: data.data.id,
+      //   userId: roomInput.user_id,
+      // });
       setCreateRoomDialog(false);
       router.push("/waiting-room/" + data.data.id);
     } catch (error) {

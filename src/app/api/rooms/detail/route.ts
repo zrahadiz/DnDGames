@@ -12,12 +12,7 @@ export async function GET(req: Request) {
     .select()
     .from(rooms)
     .innerJoin(room_players, eq(rooms.id, room_players.room_id))
-    .where(
-      and(
-        room_id ? eq(rooms.id, Number(room_id)) : undefined,
-        eq(rooms.status, "waiting")
-      )
-    );
+    .where(and(room_id ? eq(rooms.id, Number(room_id)) : undefined));
 
   const grouped = roomDetail.reduce((acc, item) => {
     console.log("Acc: ", acc);

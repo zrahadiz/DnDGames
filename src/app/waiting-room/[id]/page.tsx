@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import lavaKnight from "@/assets/images/lavaKnight.png";
-import api from "@/lib/axios";
 import { socket } from "@/lib/socket";
+
+import api from "@/lib/axios";
+
+import lavaKnight from "@/assets/images/lavaKnight.png";
+
+import Loading from "@/components/ui/loading";
 import { PlayerCard } from "@/components/ui/playerCard";
 import { Button } from "@/components/ui/button";
-import Loading from "@/components/ui/loading";
 import { LogOut } from "lucide-react";
 
-import { useRouter, usePathname } from "next/navigation";
-import { set } from "react-hook-form";
-import { is } from "drizzle-orm";
-import axios from "axios";
+import { useRouter } from "next/navigation";
 
 export default function WaitingRoom() {
   interface Player {
@@ -38,18 +38,15 @@ export default function WaitingRoom() {
     created_at: string;
     players: Player[];
   }
-
-  const router = useRouter();
-
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<any[]>([]);
-  const [userId, setUserId] = useState<Number | null>(null);
   const [hostPlayer, setHostPlayer] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
+
+  const router = useRouter();
   const params = useParams();
   const id = params.id; // <-- "7"
 
@@ -120,17 +117,32 @@ export default function WaitingRoom() {
       setLoadingState(true);
       setLoadingText("Starting game...");
       try {
-        setAiPrompt(
-          `Bisakah kamu berperan sebagai room master dari permainan Dungeon and Dragon (DnD), Temanya adalah Medieval dan yang bermain adalah 2 orang, dengan nama character Rudo, Sebastian dan role Knight, Magician. Jika bisa tolong langsung respon dengan skenarionya saja`
+        const characterNames = room.players.map(
+          (value) => value.character_name
         );
+        const characterClasses = room.players.map(
+          (value) => value.character_class
+        );
+        const aiPrompt = `Bisakah kamu berperan sebagai room master dari permainan Dungeon and Dragon (DnD), dengan judul ${
+          room.title
+        } yang bertema ${
+          room.theme
+        } dan yang bermain adalah 2 orang, dengan nama character ${characterNames.join(
+          ", "
+        )} dan role ${characterClasses.join(
+          ", "
+        )}. Jika bisa tolong langsung respon dengan skenarionya saja`;
         console.log(aiPrompt);
-        const initAI = await api.post("ai", { prompt: "asd" });
+
+        const initAI = await api.post("ai", { prompt: aiPrompt });
         console.log(initAI);
+        const response = initAI.data.text;
+        console.log(response);
         socket.emit("start_game", {
           roomId: id,
-          userId: currentUserId,
+          aiMessage: response,
         });
-        // router.replace(`/rooms/${id}`);
+        router.replace(`/rooms/${id}`);
       } catch (error) {
         console.error("Error starting game:", error);
       } finally {
@@ -159,11 +171,17 @@ export default function WaitingRoom() {
   };
 
   useEffect(() => {
-    console.log("User ID from localStorage:", userId);
+    const currentUserId = Number(localStorage.getItem("user_id"));
+    console.log("User ID from localStorage:", currentUserId);
     fetchRooms();
+    socket.emit("join_room", {
+      roomId: id,
+      userId: currentUserId,
+    });
   }, []);
 
   useEffect(() => {
+    const currentUserId = Number(localStorage.getItem("user_id"));
     console.log("Setting up socket listeners");
     socket.on("room_update", (update) => {
       console.log("Room update received:", update);
@@ -192,7 +210,7 @@ export default function WaitingRoom() {
         setPlayers((prevPlayers) =>
           prevPlayers.filter((p) => p.user_id !== update.user_id)
         );
-        if (update.user_id === userId && update.disconnected) {
+        if (update.user_id === currentUserId && update.disconnected) {
           // If the update is about the current user leaving (not disconnecting), redirect to lobby
           router.push("/lobby");
         } else {
@@ -208,7 +226,9 @@ export default function WaitingRoom() {
         );
         setIsPlayerReady(update.player.is_ready);
       } else if (update.type === "game_started") {
+        setLoadingState(true);
         router.replace(`/rooms/${id}`);
+        setLoadingState(false);
       } else {
         console.warn("Unknown room update type:", update);
       }

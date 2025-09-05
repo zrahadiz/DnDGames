@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
       console.error("join_room missing roomId or userId", { roomId, userId });
       return;
     }
+
     console.log(`User ${userId} joining room ${roomId}`);
     const roomKey = `room_${roomId}`;
     socket.join(roomKey);
@@ -43,6 +44,34 @@ io.on("connection", (socket) => {
 
     io.to(roomKey).emit("room_update", {
       type: "player_joined",
+      player, // full player object
+    });
+  });
+
+  //refresh room
+  socket.on("refresh_room", async ({ roomId, userId }) => {
+    if (!roomId || !userId) {
+      console.error("join_room missing roomId or userId", { roomId, userId });
+      return;
+    }
+    console.log(`User ${userId} joining room ${roomId}`);
+    const roomKey = `room_${roomId}`;
+    socket.join(roomKey);
+
+    if (!socketUserMap.get(socket.id)) {
+      socketUserMap.set(socket.id, { roomId, userId });
+    }
+
+    // Ideally fetch from DB
+    const player = await db.query.room_players.findFirst({
+      where: and(
+        eq(room_players.user_id, userId),
+        eq(room_players.room_id, roomId)
+      ),
+    });
+
+    io.to(roomKey).emit("room_update", {
+      type: "player_refreshed",
       player, // full player object
     });
   });
@@ -91,8 +120,9 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("start_game", async ({ roomId }) => {
+  socket.on("start_game", async ({ roomId, aiMessage }) => {
     console.log("start_game event", { roomId });
+    console.log("AiMessage : ", aiMessage);
     if (!roomId) {
       console.error("start_game missing roomId", { roomId });
       return;
@@ -101,7 +131,7 @@ io.on("connection", (socket) => {
     // Update room status in DB
     await db
       .update(rooms)
-      .set({ status: "in_game" })
+      .set({ status: "in_game", firstMessage: aiMessage })
       .where(eq(rooms.id, roomId));
     io.to(roomKey).emit("room_update", {
       type: "game_started",
@@ -110,34 +140,35 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", async () => {
     console.log("User disconnected:", socket.id);
-    const userMap = socketUserMap.get(socket.id);
-    console.log("Socket user map:", socketUserMap);
-    console.log("Disconnected user info:", userMap);
-    // If the user was tracked, handle their departure
-    if (userMap) {
-      // Remove the player from the database
-      await db
-        .delete(room_players)
-        .where(
-          and(
-            eq(room_players.room_id, userMap.roomId),
-            eq(room_players.user_id, userMap.userId)
-          )
-        );
-      const roomKey = `room_${userMap.roomId}`;
-      console.log(
-        `User ${userMap.userId} disconnected, removed from room ${userMap.roomId}`
-      );
-      // Emit an update to the room to remove the player from the UI
-      io.to(roomKey).emit("room_update", {
-        type: "player_left",
-        user_id: userMap.roomId,
-        disconnected: true,
-      });
+    socketUserMap.delete(socket.id);
+    // const userMap = socketUserMap.get(socket.id);
+    // console.log("Socket user map:", socketUserMap);
+    // console.log("Disconnected user info:", userMap);
+    // // If the user was tracked, handle their departure
+    // if (userMap) {
+    //   // Remove the player from the database
+    //   await db
+    //     .delete(room_players)
+    //     .where(
+    //       and(
+    //         eq(room_players.room_id, userMap.roomId),
+    //         eq(room_players.user_id, userMap.userId)
+    //       )
+    //     );
+    //   const roomKey = `room_${userMap.roomId}`;
+    //   console.log(
+    //     `User ${userMap.userId} disconnected, removed from room ${userMap.roomId}`
+    //   );
+    //   // Emit an update to the room to remove the player from the UI
+    //   io.to(roomKey).emit("room_update", {
+    //     type: "player_left",
+    //     user_id: userMap.roomId,
+    //     disconnected: true,
+    //   });
 
-      // Clean up the map
-      socketUserMap.delete(socket.id);
-    }
+    // Clean up the map
+    // socketUserMap.delete(socket.id);
+    // }
   });
 });
 
