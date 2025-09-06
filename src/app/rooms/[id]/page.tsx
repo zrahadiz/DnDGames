@@ -45,7 +45,6 @@ export default function Home() {
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [input, setInput] = useState("");
-  const [answer, setAnswer] = useState("");
 
   const router = useRouter();
   const params = useParams();
@@ -76,10 +75,10 @@ export default function Home() {
         userId: currentUserId,
       });
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: roomData.firstMessage },
-      ]);
+      // setMessages((prev) => [
+      //   ...prev,
+      //   { role: "ai", text: roomData.firstMessage },
+      // ]);
       console.log("Rooms fetched: ", data.roomsDetail);
       console.log("Players Fetched: ", data.roomsDetail[0].players);
     } catch (error) {
@@ -90,22 +89,44 @@ export default function Home() {
     }
   };
 
+  const fetchMessages = async () => {
+    setLoadingState(true);
+    setLoadingText("Mengambil Pesan");
+    try {
+      const { data } = await api.get(`/message?room_id=${id}`);
+      const allMessages = data.data;
+      console.log(allMessages);
+
+      // Check if the API response data is an array
+      if (Array.isArray(allMessages)) {
+        // Use .map() to transform each message object
+        const formattedMessages = allMessages.map((message) => ({
+          role: message.sender,
+          text: message.content,
+        }));
+
+        // Set the state with the new, formatted array
+        setMessages(formattedMessages);
+      } else {
+        console.error("API response is not an array:", data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Add player message
-    setMessages((prev) => [...prev, { role: "player", text: input }]);
-
-    const res = await fetch("/api/ai", {
-      method: "POST",
-      body: JSON.stringify({ prompt: input }),
-      headers: { "Content-Type": "application/json" },
+    socket.emit("send_message", {
+      roomId: id,
+      sender: "player",
+      content: input,
     });
-    const data = await res.json();
-    console.log("AI response:", data.text);
-    setAnswer(data.text);
 
-    setMessages((prev) => [...prev, { role: "ai", text: data.text }]);
     setInput("");
   };
 
@@ -123,7 +144,6 @@ export default function Home() {
     });
     const data = await res.json();
     console.log("AI response:", data.text);
-    setAnswer(data.text);
 
     setMessages((prev) => [...prev, { role: "ai", text: data.text }]);
     setInput("");
@@ -131,7 +151,27 @@ export default function Home() {
 
   useEffect(() => {
     fetchRooms();
+    fetchMessages();
   }, []);
+
+  useEffect(() => {
+    const currentUserId = Number(localStorage.getItem("user_id"));
+    console.log("Setting up socket listeners");
+    socket.on("room_update", (update) => {
+      console.log("Room update received:", update);
+      if (update.type === "send_message") {
+        console.log(update.message);
+        const messageInfo = update.message[0];
+        setMessages((prev) => [
+          ...prev,
+          { role: messageInfo.sender, text: messageInfo.content },
+        ]);
+      }
+    });
+    return () => {
+      socket.off("room_update");
+    };
+  }, [socket]);
 
   // Split the players array into two halves
   const half = Math.ceil(players.length / 2);
@@ -139,97 +179,98 @@ export default function Home() {
   const rightPlayers = players.slice(half);
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 flex flex-col items-center">
-      <div className="container mx-auto max-w-7xl">
-        <h1 className="text-4xl font-extrabold text-gray-800 mb-6 text-center">
-          Dungeon Room - {room?.title}
-        </h1>
+    <div className="flex flex-col justify-center py-5 px-10 bg-gray-100 max-h-screen w-full">
+      {/* Header */}
+      <h1 className="hidden md:block text-3xl font-extrabold text-gray-800 mb-4 text-center shrink-0">
+        Dungeon Room - {room?.title}
+      </h1>
 
-        {/* Main Layout Grid */}
-        <div className="flex-1 grid grid-cols-12 gap-1 md:gap-4 min-h-0">
-          {/* Left Column (Players) */}
-          <div className="hidden md:flex col-span-12 md:col-span-3 justify-center">
-            <div className="flex flex-col justify-between gap-4 w-full sm:w-2/3 md:w-full">
-              {leftPlayers.map((player) => (
-                <CardHero
-                  key={player.id}
-                  image={character2}
-                  name={player.character_name}
-                  role={`${player.character_class} - Level ${player.level}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Middle Column (Chat Area) */}
-          <div className="col-span-12 md:col-span-6 flex flex-col min-h-0">
-            <div className="flex flex-col bg-white shadow-lg rounded-xl p-4 h-full min-h-0">
-              {/* Chat Header */}
-              <h1 className="text-xl font-bold mb-4 text-gray-800">
-                The Arena
-              </h1>
-
-              {/* Messages */}
-              <div className="flex-1 min-h-0 overflow-y-auto mb-4 space-y-2">
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-2 rounded-lg ${
-                      msg.role === "ai"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    <b>{msg.role === "ai" ? "Dungeon Master" : "You"}:</b>{" "}
-                    {msg.text}
-                  </div>
-                ))}
-              </div>
-
-              {/* Input Area */}
-              <div className="flex gap-2">
-                <textarea
-                  className="flex-1 border border-gray-300 rounded-lg p-2 w-5/6 resize-none min-h-[3rem] focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  rows={1}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                />
-                <button
-                  onClick={sendMessage}
-                  className="bg-purple-600 text-white px-4 py-2 w-1/6 h-full rounded-lg cursor-pointer hover:bg-purple-700 transition-colors"
-                >
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column (Players) */}
-          <div className="hidden md:flex col-span-12 md:col-span-3  justify-center">
-            <div className="flex flex-col justify-between gap-4 w-full sm:w-2/3 md:w-full">
-              {rightPlayers.map((player) => (
-                <CardHero
-                  key={player.id}
-                  image={character2}
-                  name={player.character_name}
-                  role={`${player.character_class} - Level ${player.level}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Players for Phone */}
-          {players.map((player) => (
-            <div className="flex md:hidden col-span-3 justify-center mt-5">
+      {/* Main Layout Grid → flex-1 ensures it fills remaining height */}
+      <div className="flex-1 grid grid-cols-12 gap-2 md:gap-4 min-h-0 max-h-full">
+        {/* Left Column (Players) */}
+        <div className="hidden md:flex col-span-12 md:col-span-3 justify-center">
+          <div className="flex flex-col justify-between gap-4 w-full sm:w-2/3 md:w-full">
+            {leftPlayers.map((player) => (
               <CardHero
                 key={player.id}
-                image={character3}
+                image={character2}
                 name={player.character_name}
                 role={`${player.character_class} - Level ${player.level}`}
               />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* Middle Column (Chat Area) */}
+        <div className="col-span-12 md:col-span-6 flex flex-col min-h-20">
+          <div className="flex flex-col bg-white shadow-lg rounded-xl p-4 flex-1 min-h-20">
+            {/* Chat Header */}
+            <h1 className="text-xl font-bold mb-4 text-gray-800 shrink-0">
+              The Arena
+            </h1>
+
+            {/* Messages (scrollable) */}
+            <div className="flex-1 overflow-y-auto mb-4 space-y-2 min-h-0">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`p-2 rounded-lg ${
+                    msg.role === "ai"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-blue-100 text-blue-800"
+                  }`}
+                >
+                  <b>{msg.role === "ai" ? "Dungeon Master" : "You"}:</b>{" "}
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            {/* Input Area */}
+            <div className="flex gap-2 shrink-0">
+              <textarea
+                className="flex-1 border border-gray-300 rounded-lg p-2 resize-none min-h-[3rem] focus:outline-none focus:ring-2 focus:ring-purple-500"
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <button
+                onClick={sendMessage}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-purple-700 transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (Players) */}
+        <div className="hidden md:flex col-span-12 md:col-span-3 justify-center">
+          <div className="flex flex-col justify-between gap-4 w-full sm:w-2/3 md:w-full">
+            {rightPlayers.map((player) => (
+              <CardHero
+                key={player.id}
+                image={character2}
+                name={player.character_name}
+                role={`${player.character_class} - Level ${player.level}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Players for Phone */}
+        {players.map((player) => (
+          <div
+            key={player.id}
+            className="flex md:hidden col-span-3 justify-center mt-5"
+          >
+            <CardHero
+              image={character3}
+              name={player.character_name}
+              role={`${player.character_class} - Level ${player.level}`}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );

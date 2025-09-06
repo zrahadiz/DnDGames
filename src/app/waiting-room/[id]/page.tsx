@@ -138,9 +138,11 @@ export default function WaitingRoom() {
         console.log(initAI);
         const response = initAI.data.text;
         console.log(response);
+
+        await initMessage(response);
+
         socket.emit("start_game", {
           roomId: id,
-          aiMessage: response,
         });
         router.replace(`/rooms/${id}`);
       } catch (error) {
@@ -168,6 +170,16 @@ export default function WaitingRoom() {
         setLoadingText("");
       }
     }
+  };
+
+  const initMessage = async (aiResponse: string) => {
+    console.log(aiResponse);
+    const { data } = await api.post("message/send", {
+      room_id: id,
+      sender: "ai",
+      content: aiResponse,
+    });
+    console.log(data);
   };
 
   useEffect(() => {

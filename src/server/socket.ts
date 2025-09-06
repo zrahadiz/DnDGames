@@ -1,7 +1,7 @@
 import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
-import { room_players, rooms } from "@/db/schema";
+import { messages, room_players, rooms } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { use } from "react";
 import { disconnect } from "process";
@@ -120,9 +120,8 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("start_game", async ({ roomId, aiMessage }) => {
+  socket.on("start_game", async ({ roomId }) => {
     console.log("start_game event", { roomId });
-    console.log("AiMessage : ", aiMessage);
     if (!roomId) {
       console.error("start_game missing roomId", { roomId });
       return;
@@ -131,10 +130,40 @@ io.on("connection", (socket) => {
     // Update room status in DB
     await db
       .update(rooms)
-      .set({ status: "in_game", firstMessage: aiMessage })
+      .set({ status: "in_game" })
       .where(eq(rooms.id, roomId));
     io.to(roomKey).emit("room_update", {
       type: "game_started",
+    });
+  });
+
+  socket.on("send_message", async ({ roomId, sender, content }) => {
+    console.log(`send message from: ${sender} to ${roomId}, text = ${content}`);
+
+    if (!sender || !roomId || !content) {
+      console.error("send_message missing roomId, sender or content", {
+        roomId,
+        sender,
+        content,
+      });
+      return;
+    }
+
+    const roomKey = `room_${roomId}`;
+
+    const message = await db
+      .insert(messages)
+      .values({
+        room_id: roomId,
+        sender,
+        content,
+      })
+      .returning();
+
+    console.log(message);
+    io.to(roomKey).emit("room_update", {
+      type: "send_message",
+      message,
     });
   });
 

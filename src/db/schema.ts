@@ -26,7 +26,6 @@ export const rooms = pgTable("rooms", {
   status: varchar("status", { length: 20 }).notNull().default("waiting"),
   host_id: integer("host_id").references(() => users.id),
   created_at: timestamp("created_at").defaultNow(),
-  firstMessage: text().default(""),
 });
 
 // ----------------- Rooms Players -----------------

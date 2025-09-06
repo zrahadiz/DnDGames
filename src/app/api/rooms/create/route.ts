@@ -1,7 +1,7 @@
 // /pages/api/rooms/create.ts
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { rooms, room_players, users, messages } from "@/db/schema";
+import { rooms, room_players, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
