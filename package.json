@@ -7,7 +7,11 @@
     "dev:socket": "ts-node -r tsconfig-paths/register --project tsconfig.socket.json ./src/server/socket.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@google/genai": "^1.15.0",

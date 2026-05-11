@@ -1,59 +1,300 @@
 // src/db/schema.ts
+
 import {
   pgTable,
-  serial,
+  pgEnum,
+  uuid,
   varchar,
   text,
-  integer,
   timestamp,
   boolean,
+  integer,
+  unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
-// ----------------- Users -----------------
+/* =========================================================
+   ENUMS
+========================================================= */
+
+export const userTypeEnum = pgEnum("user_type", ["guest", "registered"]);
+
+export const roomStatusEnum = pgEnum("room_status", [
+  "waiting",
+  "playing",
+  "finished",
+]);
+
+export const roomVisibilityEnum = pgEnum("room_visibility", [
+  "public",
+  "private",
+]);
+
+export const roomPlayerRoleEnum = pgEnum("room_player_role", [
+  "host",
+  "player",
+  "spectator",
+]);
+
+export const messageSenderTypeEnum = pgEnum("message_sender_type", [
+  "user",
+  "ai",
+  "system",
+]);
+
+/* =========================================================
+   USERS
+========================================================= */
+
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull(), // consider unique if needed
-  created_at: timestamp("created_at").defaultNow(),
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  type: userTypeEnum("type").notNull().default("guest"),
+
+  username: varchar("username", {
+    length: 50,
+  }).unique(),
+
+  email: varchar("email", {
+    length: 255,
+  }).unique(),
+
+  image: text("image"),
+
+  lastSeenAt: timestamp("last_seen_at"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ----------------- Rooms -----------------
+/* =========================================================
+   CAMPAIGNS
+   Persistent story/world
+========================================================= */
+
+export const campaigns = pgTable("campaigns", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  title: varchar("title", {
+    length: 100,
+  }).notNull(),
+
+  description: text("description"),
+
+  theme: varchar("theme", {
+    length: 50,
+  }).notNull(),
+
+  backgroundLore: text("background_lore"),
+
+  startingObjective: text("starting_objective"),
+
+  worldSetup: jsonb("world_setup"),
+
+  createdBy: uuid("created_by").references(() => users.id),
+
+  isOfficial: boolean("is_official").default(true),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/* =========================================================
+   ROOMS
+   Multiplayer realtime session
+========================================================= */
+
 export const rooms = pgTable("rooms", {
-  id: serial("id").primaryKey(),
-  title: varchar("title", { length: 100 }).notNull(),
-  theme: varchar("theme", { length: 50 }).notNull(),
-  password: varchar("password", { length: 255 }).default("").notNull(),
-  max_players: integer("max_players").notNull().default(5),
-  status: varchar("status", { length: 20 }).notNull().default("waiting"),
-  host_id: integer("host_id").references(() => users.id),
-  created_at: timestamp("created_at").defaultNow(),
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  campaignId: uuid("campaign_id")
+    .references(() => campaigns.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+
+  name: varchar("name", {
+    length: 100,
+  }).notNull(),
+
+  roomCode: varchar("room_code", {
+    length: 10,
+  })
+    .notNull()
+    .unique(),
+
+  visibility: roomVisibilityEnum("visibility").notNull().default("public"),
+
+  password: varchar("password", {
+    length: 255,
+  }),
+
+  storySummary: text("story_summary"),
+
+  currentProgression: text("current_progression"),
+
+  worldState: jsonb("world_state"),
+
+  maxPlayers: integer("max_players").notNull().default(4),
+
+  status: roomStatusEnum("status").notNull().default("waiting"),
+
+  aiModel: varchar("ai_model", {
+    length: 100,
+  }).default("gpt-4.1"),
+
+  hostId: uuid("host_id")
+    .notNull()
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// ----------------- Rooms Players -----------------
-export const room_players = pgTable("room_players", {
-  id: serial("id").primaryKey(),
-  user_id: integer("user_id")
+/* =========================================================
+   ROOM PLAYERS
+   Current realtime participation
+========================================================= */
+
+export const roomPlayers = pgTable(
+  "room_players",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, {
+        onDelete: "cascade",
+      }),
+
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "cascade",
+      }),
+
+    role: roomPlayerRoleEnum("role").notNull().default("player"),
+
+    isReady: boolean("is_ready").notNull().default(false),
+
+    isConnected: boolean("is_connected").notNull().default(true),
+
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+
+    lastSeenAt: timestamp("last_seen_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueUserRoom: unique().on(table.userId, table.roomId),
+  }),
+);
+
+/* =========================================================
+   CHARACTERS
+   Persistent RPG character
+========================================================= */
+
+export const characters = pgTable("characters", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  userId: uuid("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }), // FK to users
-  room_id: integer("room_id")
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+
+  roomId: uuid("room_id")
     .notNull()
-    .references(() => rooms.id, { onDelete: "cascade" }), // FK to rooms
-  character_name: varchar("character_name", { length: 50 }).notNull(),
-  character_class: varchar("character_class", { length: 50 }).notNull(),
-  level: integer("level").default(1),
-  is_ready: boolean("is_ready").notNull().default(false),
-  last_seen_at: timestamp("last_seen_at").defaultNow().notNull(),
+    .references(() => rooms.id, {
+      onDelete: "cascade",
+    }),
+
+  name: varchar("name", {
+    length: 50,
+  }).notNull(),
+
+  race: varchar("race", {
+    length: 50,
+  }),
+
+  characterClass: varchar("character_class", {
+    length: 50,
+  }),
+
+  level: integer("level").notNull().default(1),
+
+  hp: integer("hp").notNull().default(100),
+
+  mana: integer("mana").notNull().default(100),
+
+  backstory: text("backstory"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Optional: prevent same user joining same room twice
-// You can enforce it in your application logic or add a DB unique constraint if supported.
+/* =========================================================
+   GAME EVENTS
+   Structured gameplay events
+========================================================= */
 
-// ----------------- Messages -----------------
+export const gameEvents = pgTable("game_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  roomId: uuid("room_id")
+    .notNull()
+    .references(() => rooms.id, {
+      onDelete: "cascade",
+    }),
+
+  eventType: varchar("event_type", {
+    length: 50,
+  }).notNull(),
+
+  /*
+      Examples:
+      {
+        "dice": "d20",
+        "result": 18
+      }
+
+      {
+        "attacker": "Kael",
+        "target": "Goblin",
+        "damage": 12
+      }
+    */
+  payload: jsonb("payload").notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/* =========================================================
+   MESSAGES
+   Chat / AI narration / system messages
+========================================================= */
+
 export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  room_id: integer("room_id")
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  roomId: uuid("room_id")
     .notNull()
-    .references(() => rooms.id, { onDelete: "cascade" }), // FK to rooms
-  sender: varchar("sender", { length: 50 }).notNull(), // username or "ai"
+    .references(() => rooms.id, {
+      onDelete: "cascade",
+    }),
+
+  senderId: uuid("sender_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+
+  senderType: messageSenderTypeEnum("sender_type").notNull(),
+
   content: text("content").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

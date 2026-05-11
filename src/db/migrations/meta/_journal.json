@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1756338114835,
-      "tag": "0000_chilly_lionheart",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1756340326451,
-      "tag": "0001_lowly_spencer_smythe",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1756793823975,
-      "tag": "0002_perpetual_lilandra",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1757034970400,
-      "tag": "0003_supreme_mentallo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1757065942552,
-      "tag": "0004_chief_blockbuster",
+      "when": 1778481838041,
+      "tag": "0000_magical_energizer",
       "breakpoints": true
     }
   ]

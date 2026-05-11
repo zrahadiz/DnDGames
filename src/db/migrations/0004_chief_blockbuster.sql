@@ -1,1 +1,0 @@
-ALTER TABLE "rooms" DROP COLUMN "firstMessage";
