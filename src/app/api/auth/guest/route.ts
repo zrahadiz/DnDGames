@@ -1,8 +1,9 @@
 import { db } from "@/db";
-import { user } from "@/db/schema";
+import { guestSessions, user } from "@/db/schema";
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { generateToken, hashToken } from "@/helpers/encryptData";
 
 function generateGuestName() {
   return `Guest_${Math.random().toString(36).substring(2, 8)}`;
@@ -23,15 +24,25 @@ export async function POST() {
     .returning();
 
   const createdUser = insertedUsers[0];
-
-  const guestToken = randomUUID();
-
+  const rawToken = generateToken();
+  const tokenHash = hashToken(rawToken);
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  expiresAt.setDate(expiresAt.getDate() + 1);
+
+  await db
+    .insert(guestSessions)
+    .values({
+      id: randomUUID(),
+      token: tokenHash,
+      userId: createdUser.id,
+      expiresAt: expiresAt,
+      createdAt: new Date(),
+    })
+    .returning();
 
   const cookieStore = await cookies();
 
-  cookieStore.set("guest_session", guestToken, {
+  cookieStore.set("guest_session", rawToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

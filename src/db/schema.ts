@@ -80,6 +80,18 @@ export const session = pgTable(
   (table) => [index("session_userId_idx").on(table.userId)],
 );
 
+export const guestSessions = pgTable("guest_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  token: text("token").notNull().unique(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, {
+      onDelete: "cascade",
+    }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const account = pgTable(
   "account",
   {
@@ -123,6 +135,7 @@ export const verification = pgTable(
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  guestSessions: many(guestSessions),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -138,6 +151,14 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const guestSessionsRelations = relations(guestSessions, ({ one }) => ({
+  user: one(user, {
+    fields: [guestSessions.userId],
+    references: [user.id],
+  }),
+}));
+
 /* =========================================================
    CAMPAIGNS
    Persistent story/world
@@ -151,6 +172,8 @@ export const campaigns = pgTable("campaigns", {
   }).notNull(),
 
   description: text("description"),
+
+  image: text("image"),
 
   theme: varchar("theme", {
     length: 50,
