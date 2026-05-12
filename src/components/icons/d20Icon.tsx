@@ -43,6 +43,17 @@ export default function D20Icon({ size = 32 }: { size?: number }) {
         stroke="#c8a96e"
         strokeWidth="0.75"
       />
+      <text
+        x="30"
+        y="35"
+        textAnchor="middle"
+        fontSize="12"
+        fontWeight="bold"
+        fill="#c8a96e"
+        fontFamily="serif"
+      >
+        20
+      </text>
     </svg>
   );
 }
