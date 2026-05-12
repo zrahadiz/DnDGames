@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { user, session } from "@/db/schema";
+import { user } from "@/db/schema";
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -11,46 +11,27 @@ function generateGuestName() {
 export async function POST() {
   const username = generateGuestName();
 
-  // Create guest user
   const insertedUsers = await db
     .insert(user)
     .values({
       id: randomUUID(),
       name: username,
       type: "guest",
-      email: `${username.toLowerCase()}@example.com`, // Dummy email for guest users
+      email: `${username.toLowerCase()}@guest.local`,
       emailVerified: false,
     })
     .returning();
 
   const createdUser = insertedUsers[0];
 
-  // Create session token
-  const token = randomUUID();
+  const guestToken = randomUUID();
 
-  // Session expiration (7 days)
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  // Save session in DB
-  const insertedSessions = await db
-    .insert(session)
-    .values({
-      id: randomUUID(),
-      token,
-      userId: createdUser.id,
-      expiresAt,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .returning();
-
-  const createdSession = insertedSessions[0];
-
-  // Set auth cookie
   const cookieStore = await cookies();
 
-  cookieStore.set("better-auth.session_token", token, {
+  cookieStore.set("guest_session", guestToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -61,6 +42,5 @@ export async function POST() {
   return NextResponse.json({
     success: true,
     user: createdUser,
-    session: createdSession,
   });
 }
