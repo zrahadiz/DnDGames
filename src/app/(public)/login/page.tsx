@@ -6,6 +6,8 @@ import { createAuthClient } from "better-auth/client";
 import { ShieldAlert, Pickaxe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Loading from "@/components/ui/loading";
+import CornerRune from "@/components/ornaments/cornerRune";
+import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 
 // ─── Inline SVG Icons ──────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -443,71 +445,5 @@ export default function LoginPage() {
         </p>
       </main>
     </div>
-  );
-}
-
-// ─── Ornamental Divider ────────────────────────────────────────────────────
-function OrnamentalDivider() {
-  return (
-    <div className="flex items-center justify-center gap-3">
-      <div
-        className="flex-1 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(200,169,110,0.3))",
-        }}
-      />
-      <svg
-        viewBox="0 0 40 16"
-        className="w-10 h-4 flex-shrink-0"
-        aria-hidden="true"
-      >
-        <path
-          d="M0 8 L8 2 L16 8 L8 14 Z"
-          fill="none"
-          stroke="rgba(200,169,110,0.5)"
-          strokeWidth="0.75"
-        />
-        <path
-          d="M24 8 L32 2 L40 8 L32 14 Z"
-          fill="none"
-          stroke="rgba(200,169,110,0.5)"
-          strokeWidth="0.75"
-        />
-        <circle cx="20" cy="8" r="2" fill="rgba(200,169,110,0.6)" />
-      </svg>
-      <div
-        className="flex-1 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(200,169,110,0.3), transparent)",
-        }}
-      />
-    </div>
-  );
-}
-
-// ─── Corner Rune Decoration ────────────────────────────────────────────────
-function CornerRune({ className }: { className: string }) {
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      className={`absolute w-10 h-10 opacity-20 pointer-events-none ${className}`}
-      aria-hidden="true"
-    >
-      <path
-        d="M2 2 L2 20 M2 2 L20 2"
-        stroke="#c8a96e"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M6 6 L6 16 M6 6 L16 6"
-        stroke="#c8a96e"
-        strokeWidth="0.75"
-        strokeLinecap="round"
-      />
-      <circle cx="6" cy="6" r="1.5" fill="#c8a96e" />
-    </svg>
   );
 }

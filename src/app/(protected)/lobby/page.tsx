@@ -75,7 +75,7 @@ export default function Home() {
   };
 
   const filtered = rooms.filter((r) =>
-    r.title.toLowerCase().includes(search.toLowerCase())
+    r.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   const prev = () => {
@@ -185,9 +185,9 @@ export default function Home() {
 
   useEffect(() => {
     socket.connect();
-    if (!localStorage.getItem("user_id")) {
-      setUserDialog(true);
-    }
+    // if (!localStorage.getItem("user_id")) {
+    //   setUserDialog(true);
+    // }
     fetchRooms();
     socket.on("connect", () => {
       console.log("connected:", socket.id);
