@@ -153,16 +153,6 @@ export default function LandingPage() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
-        html { scroll-behavior: smooth; }
-        @keyframes ember {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
-          50% { transform: translateY(-12px) scale(1.5); opacity: 0.75; }
-        }
-        * { box-sizing: border-box; }
-      `}</style>
-
       <main>
         {/* ─── HERO ──────────────────────────────────────────────────────────────────── */}
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY, // ✅ safe: server only
+  apiKey: process.env.GOOGLE_GENAI_API_KEY,
 });
 
 export async function POST(req: Request) {

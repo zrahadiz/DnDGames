@@ -3,6 +3,7 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-zod";
+import { z } from "zod";
 
 import { campaigns } from "@/db/schema";
 
@@ -20,3 +21,9 @@ export const updateCampaignSchema = createUpdateSchema(campaigns).omit({
   createdAt: true,
   createdBy: true,
 });
+
+export type Campaign = z.infer<typeof campaignResponseSchema>;
+
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
+
+export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;

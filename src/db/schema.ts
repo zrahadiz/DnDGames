@@ -175,15 +175,17 @@ export const campaigns = pgTable("campaigns", {
 
   image: text("image"),
 
-  theme: varchar("theme", {
-    length: 50,
-  }).notNull(),
+  themeId: uuid("theme_id")
+    .references(() => themes.id)
+    .notNull(),
 
   backgroundLore: text("background_lore"),
 
+  startingLocation: text("starting_location"),
+
   startingObjective: text("starting_objective"),
 
-  worldSetup: jsonb("world_setup"),
+  worldSetup: jsonb("world_setup").notNull(),
 
   createdBy: text("created_by").references(() => user.id),
 
@@ -193,6 +195,42 @@ export const campaigns = pgTable("campaigns", {
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const themes = pgTable("themes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  name: text("name").notNull().unique(),
+
+  icon: text("icon"),
+
+  isOfficial: boolean("is_official").default(false),
+
+  createdBy: text("created_by").references(() => user.id),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const campaignRelations = relations(campaigns, ({ one }) => ({
+  creator: one(user, {
+    fields: [campaigns.createdBy],
+    references: [user.id],
+  }),
+  theme: one(themes, {
+    fields: [campaigns.themeId],
+    references: [themes.id],
+  }),
+}));
+
+export const themeRelations = relations(themes, ({ one, many }) => ({
+  creator: one(user, {
+    fields: [themes.createdBy],
+    references: [user.id],
+  }),
+
+  campaigns: many(campaigns),
+}));
 
 /* =========================================================
    ROOMS

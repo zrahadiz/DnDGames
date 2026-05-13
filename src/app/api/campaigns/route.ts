@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { and, count, eq, ilike } from "drizzle-orm";
+import { and, count, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
@@ -25,9 +25,9 @@ export async function GET(req: NextRequest) {
       conditions.push(ilike(campaigns.title, `%${search}%`));
     }
 
-    if (theme) {
-      conditions.push(eq(campaigns.theme, theme));
-    }
+    // if (theme && theme !== "all") {
+    //   conditions.push(eq(campaigns.theme, theme));
+    // }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -55,6 +55,17 @@ export async function GET(req: NextRequest) {
 
       limit,
       offset,
+
+      with: {
+        creator: {
+          columns: {
+            id: true,
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+      },
 
       orderBy: (campaigns, { desc }) => [desc(campaigns.createdAt)],
     });
