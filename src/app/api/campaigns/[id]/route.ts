@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
+import { apiResponse } from "@/server/utils/apiResponse";
+import { updateCampaignSchema } from "@/server/validators/campaigns";
 
 type Params = Promise<{ id: string }>;
 
@@ -19,44 +20,31 @@ export async function GET(req: Request, { params }: { params: Params }) {
     });
 
     if (!campaign) {
-      return NextResponse.json(
-        {
-          error: "Campaign not found",
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiResponse(404, {
+        success: false,
+        message: "Campaign not found",
+      });
     }
 
-    return NextResponse.json(
-      {
-        data: campaign,
-      },
-      {
-        status: 200,
-      },
-    );
+    return apiResponse(200, {
+      success: true,
+      message: "Campaign fetched successfully",
+      data: campaign,
+    });
   } catch (error) {
     console.error(error);
     if (error instanceof UnauthorizedError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-        },
-        {
-          status: 401,
-        },
-      );
+      return apiResponse(401, {
+        success: false,
+        message: error?.message || "Unauthorized",
+        error,
+      });
     }
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      },
-    );
+    return apiResponse(500, {
+      success: false,
+      message: "Internal Server Error",
+      error,
+    });
   }
 }
 
@@ -64,16 +52,18 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
   try {
     const currentUser = await requiredUser();
     const { id } = await params;
-    const {
-      title,
-      image,
-      description,
-      theme,
-      backgroundLore,
-      startingObjective,
-      worldSetup,
-      isOfficial,
-    } = await req.json();
+    const body = await req.json();
+    console.log("body:", body);
+    const result = updateCampaignSchema.safeParse(body);
+    console.log("result:", result);
+
+    if (!result.success) {
+      return apiResponse(400, {
+        success: false,
+        message: "Invalid Input",
+        error: result.error.flatten(),
+      });
+    }
 
     const existingCampaign = await db.query.campaigns.findFirst({
       where: and(
@@ -83,61 +73,40 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     });
 
     if (!existingCampaign) {
-      return NextResponse.json(
-        {
-          error: "Campaign not found",
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiResponse(404, {
+        success: false,
+        message: "Campaign not found",
+      });
     }
 
     const [updatedCampaign] = await db
       .update(campaigns)
       .set({
-        title,
-        image,
-        description,
-        theme,
-        backgroundLore,
-        startingObjective,
-        worldSetup,
-        isOfficial,
+        ...result.data,
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, id))
       .returning();
 
-    return NextResponse.json(
-      {
-        data: updatedCampaign,
-        message: "Campaign updated successfully",
-      },
-      {
-        status: 200,
-      },
-    );
+    return apiResponse(200, {
+      success: true,
+      message: "Campaign updated successfully",
+      data: updatedCampaign,
+    });
   } catch (error) {
     console.error(error);
     if (error instanceof UnauthorizedError) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized",
-        },
-        {
-          status: 401,
-        },
-      );
+      return apiResponse(401, {
+        success: false,
+        message: error?.message || "Unauthorized",
+        error,
+      });
     }
-    return NextResponse.json(
-      {
-        error: "Failed to update campaign",
-      },
-      {
-        status: 500,
-      },
-    );
+    return apiResponse(500, {
+      success: false,
+      message: "Internal Server Error",
+      error,
+    });
   }
 }
 
@@ -155,31 +124,33 @@ export async function DELETE(req: Request, { params }: { params: Params }) {
     });
 
     if (!campaign) {
-      return NextResponse.json(
-        {
-          error: "Campaign not found",
-        },
-        {
-          status: 404,
-        },
-      );
+      return apiResponse(404, {
+        success: false,
+        message: "Campaign not found",
+      });
     }
 
     await db.delete(campaigns).where(eq(campaigns.id, id));
 
-    return NextResponse.json({
-      success: true,
+    return apiResponse(200, {
+      success: false,
+      message: "Campaign successfully deleted",
     });
   } catch (error) {
     console.error(error);
 
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
-      {
-        status: 500,
-      },
-    );
+    if (error instanceof UnauthorizedError) {
+      return apiResponse(401, {
+        success: false,
+        message: error?.message || "Unauthorized",
+        error,
+      });
+    }
+
+    return apiResponse(500, {
+      success: false,
+      message: "Internal Server Error",
+      error,
+    });
   }
 }

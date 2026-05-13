@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { and, count, eq, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
+import { createCampaignSchema } from "@/server/validators/campaigns";
+import { apiResponse } from "@/server/utils/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,7 +43,9 @@ export async function GET(req: NextRequest) {
         orderBy: (campaigns, { desc }) => [desc(campaigns.createdAt)],
       });
 
-      return NextResponse.json({
+      return apiResponse(200, {
+        success: true,
+        message: "Campaign dropdown retrieve successfully",
         data,
       });
     }
@@ -64,9 +68,10 @@ export async function GET(req: NextRequest) {
 
     const total = totalResult[0].count;
 
-    return NextResponse.json({
+    return apiResponse(200, {
+      success: true,
+      message: "Campaigns fetched successfully",
       data,
-
       pagination: {
         page,
         limit,
@@ -76,39 +81,30 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        error: "Failed to fetch campaigns",
-      },
-      {
-        status: 500,
-      },
-    );
+    return apiResponse(500, {
+      success: false,
+      message: "Failed to fetch campaigns",
+      error,
+    });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const {
-      title,
-      image,
-      description,
-      theme,
-      backgroundLore,
-      startingObjective,
-      worldSetup,
-    } = await req.json();
+    const body = await req.json();
 
-    if (!title || !theme) {
-      return NextResponse.json(
-        {
-          error: "Missing required fields",
-        },
-        {
-          status: 400,
-        },
-      );
+    console.log("body:", body);
+
+    const result = createCampaignSchema.safeParse(body);
+
+    console.log("result:", result);
+
+    if (!result.success) {
+      return apiResponse(400, {
+        success: false,
+        message: "Invalid Input",
+        error: result.error.flatten(),
+      });
     }
 
     const currentUser = await requiredUser();
@@ -116,36 +112,22 @@ export async function POST(req: Request) {
     const [newCampaign] = await db
       .insert(campaigns)
       .values({
-        title,
-        image,
-        description,
-        theme,
-        backgroundLore,
-        startingObjective,
-        worldSetup,
+        ...result.data,
         createdBy: currentUser.user.id,
       })
       .returning();
 
-    return NextResponse.json(
-      {
-        data: newCampaign,
-        message: "Campaign has been created",
-      },
-      {
-        status: 201,
-      },
-    );
+    return apiResponse(201, {
+      success: true,
+      message: "Campaign has been created",
+      data: newCampaign,
+    });
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        error: "Failed to create campaign",
-      },
-      {
-        status: 500,
-      },
-    );
+    return apiResponse(500, {
+      success: false,
+      message: "Failed to create campaign",
+      error,
+    });
   }
 }
