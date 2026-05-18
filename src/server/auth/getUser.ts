@@ -6,11 +6,14 @@ import { eq } from "drizzle-orm";
 import { hashToken } from "@/helpers/encryptData";
 
 export async function getCurrentUser() {
+  console.log("test");
   const cookieStore = await cookies();
   const guestCookie = cookieStore.get("guest_session");
 
   if (guestCookie) {
+    console.log("Guesttttt");
     const hashed = hashToken(guestCookie.value);
+    console.log(hashed);
     const session = await db.query.guestSessions.findFirst({
       where: eq(guestSessions.token, hashed),
       with: {

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { and, count, ilike } from "drizzle-orm";
+import { and, count, ilike, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
@@ -8,6 +8,8 @@ import { apiResponse } from "@/server/utils/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
+    console.time("db");
+
     const searchParams = req.nextUrl.searchParams;
 
     const page = Number(searchParams.get("page")) || 1;
@@ -25,9 +27,9 @@ export async function GET(req: NextRequest) {
       conditions.push(ilike(campaigns.title, `%${search}%`));
     }
 
-    // if (theme && theme !== "all") {
-    //   conditions.push(eq(campaigns.theme, theme));
-    // }
+    if (theme && theme !== "all") {
+      conditions.push(eq(campaigns.themeId, theme));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -42,6 +44,7 @@ export async function GET(req: NextRequest) {
 
         orderBy: (campaigns, { desc }) => [desc(campaigns.createdAt)],
       });
+      console.timeEnd("db");
 
       return apiResponse(200, {
         success: true,
@@ -57,6 +60,13 @@ export async function GET(req: NextRequest) {
       offset,
 
       with: {
+        theme: {
+          columns: {
+            id: true,
+            name: true,
+            icon: true,
+          },
+        },
         creator: {
           columns: {
             id: true,

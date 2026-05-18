@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useSession } from "@/lib/auth-client";
 import Divider from "@/components/ornaments/divider";
 import type { Campaign } from "@/types/campaigns";
 import api from "@/lib/axios";
@@ -11,38 +10,16 @@ import CampaignModal from "@/components/campaigns/campaignModal";
 import PageBg from "@/components/layout/pageBackground";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import DeleteModal from "@/components/campaigns/deleteModal";
-
-const THEMES = [
-  "all",
-  "epic-fantasy",
-  "horror",
-  "sci-fi",
-  "intrigue",
-  "steampunk",
-  "fey",
-  "western",
-  "post-apocalyptic",
-];
-
-const ICONS: Record<string, string> = {
-  "epic-fantasy": "⚔️",
-  horror: "🩸",
-  "sci-fi": "🚀",
-  intrigue: "🗡️",
-  steampunk: "⚙️",
-  fey: "🌿",
-  western: "🤠",
-  "post-apocalyptic": "☢️",
-};
+import { ThemeSelector } from "@/components/forms/themeSelector";
+import { Theme } from "@/types/theme";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function CampaignsPage() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id ?? "current-user";
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const { user } = useAuthStore();
 
   const [search, setSearch] = useState("");
-  const [themeFilter, setThemeFilter] = useState("all");
-  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [theme, setTheme] = useState<Theme | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
 
@@ -51,21 +28,24 @@ export default function CampaignsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
 
   const getCampaigns = async () => {
+    console.time("fetch campaigns");
+
     const { data } = await api.get("campaigns", {
       params: {
         search,
-        theme: themeFilter,
+        theme: theme?.id,
         page,
         limit,
       },
     });
+    console.timeEnd("fetch campaigns");
     console.log(data);
     setCampaigns(data.data);
   };
 
   useEffect(() => {
     getCampaigns();
-  }, []);
+  }, [search, theme, page, limit]);
 
   const handleSave = (data: Record<string, unknown>) => {
     if (editTarget) {
@@ -75,60 +55,6 @@ export default function CampaignsPage() {
     }
   };
 
-  type FilterButtonProps = {
-    value: string;
-    current: string;
-    onClick: () => void;
-    children: React.ReactNode;
-  };
-
-  function FilterButton({
-    value,
-    current,
-    onClick,
-    children,
-  }: FilterButtonProps) {
-    const active = current === value;
-
-    return (
-      <button
-        onClick={onClick}
-        className={`rounded-lg border px-3 py-1.5 font-['Cinzel',serif] text-[11px] tracking-[0.06em] transition-all duration-150 active:scale-[0.98]${
-          active
-            ? `border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.15)] text-[#d4b87a] shadow-[0_0_16px_rgba(200,169,110,0.08)]`
-            : `border-[rgba(200,169,110,0.15)] text-[#ae9d88]
- hover:border-[rgba(200,169,110,0.3)] hover:bg-[rgba(200,169,110,0.05)] hover:text-[#b8995a]`
-        }`}
-      >
-        {children}
-      </button>
-    );
-  }
-
-  const filters = [
-    {
-      label: "Owner",
-      current: ownerFilter,
-      set: setOwnerFilter,
-
-      options: [
-        ["all", "All Campaigns"],
-        ["official", "✦ Official"],
-        ["community", "Community"],
-        ["mine", "My Campaigns"],
-      ],
-    },
-    {
-      label: "Theme",
-      current: themeFilter,
-      set: setThemeFilter,
-
-      options: THEMES.map((t) => [
-        t,
-        t === "all" ? "All Themes" : `${ICONS[t] ?? "🎲"} ${t}`,
-      ]),
-    },
-  ];
   return (
     <>
       <div className="min-h-screen px-6 py-20">
@@ -172,26 +98,11 @@ export default function CampaignsPage() {
 
           {/* Filters */}
           <div className="mb-7 flex flex-col gap-4 rounded-[14px] border border-[rgba(200,169,110,0.1)] bg-[rgba(26,18,8,0.6)] p-4">
-            {filters.map((filter) => (
-              <div key={filter.label}>
-                <p className="mb-2 font-serif text-[11px] italic text-[#5a4830]">
-                  Filter by {filter.label.toLowerCase()}
-                </p>
-
-                <div className="flex flex-wrap gap-1.5">
-                  {filter.options.map(([v, l]) => (
-                    <FilterButton
-                      key={v}
-                      value={v}
-                      current={filter.current}
-                      onClick={() => filter.set(v)}
-                    >
-                      {l}
-                    </FilterButton>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <ThemeSelector
+              selectedTheme={theme}
+              onChange={setTheme}
+              allowCustomAdd={false}
+            />
           </div>
 
           {/* Result count */}
@@ -219,7 +130,7 @@ export default function CampaignsPage() {
                 <CampaignCard
                   key={c.id}
                   campaign={c}
-                  isOwner={c.createdBy === userId}
+                  isOwner={c.createdBy === user?.id}
                   onEdit={setEditTarget}
                   onDelete={setDeleteTarget}
                   onPlay={(c) => console.log("play", c.id)}

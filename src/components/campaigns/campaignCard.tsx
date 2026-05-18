@@ -1,16 +1,9 @@
 import { useState } from "react";
-import type { Campaign } from "@/types/campaigns";
 
-const ICONS: Record<string, string> = {
-  "epic-fantasy": "⚔️",
-  horror: "🩸",
-  "sci-fi": "🚀",
-  intrigue: "🗡️",
-  steampunk: "⚙️",
-  fey: "🌿",
-  western: "🤠",
-  "post-apocalyptic": "☢️",
-};
+import * as LucideIcons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import type { Campaign } from "@/types/campaigns";
 
 type Props = {
   campaign: Campaign;
@@ -31,8 +24,13 @@ export default function CampaignCard({
   onDelete,
   onPlay,
 }: Props) {
+  const Icon =
+    (LucideIcons[
+      campaign.theme.icon as keyof typeof LucideIcons
+    ] as LucideIcon) || LucideIcons.Circle;
+
   const [hovered, setHovered] = useState(false);
-  // const icon = ICONS[campaign.theme] ?? "🎲";
+
   const s: React.CSSProperties = {
     background: "linear-gradient(160deg,#1a1208,#120d1a)",
     border: `1px solid ${hovered ? "rgba(200,169,110,0.45)" : "rgba(200,169,110,0.15)"}`,
@@ -44,6 +42,10 @@ export default function CampaignCard({
     transform: hovered ? "translateY(-4px)" : "none",
     boxShadow: hovered ? "0 16px 40px rgba(0,0,0,0.4)" : "none",
   };
+
+  function formatWorldSetupKey(key: string) {
+    return key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
+  }
   return (
     <div
       style={s}
@@ -83,8 +85,8 @@ export default function CampaignCard({
               alignItems: "center",
             }}
           >
-            {/* <span style={{ fontSize: "18px" }}>{icon}</span> */}
-            {/* <span
+            <Icon className="h-4 w-4 text-yellow-600" />
+            <span
               style={{
                 fontSize: "11px",
                 padding: "3px 10px",
@@ -96,8 +98,8 @@ export default function CampaignCard({
                 letterSpacing: "0.08em",
               }}
             >
-              {campaign.theme}
-            </span> */}
+              {campaign.theme.name}
+            </span>
             {campaign.isOfficial && (
               <span
                 style={{
@@ -140,41 +142,20 @@ export default function CampaignCard({
         >
           {campaign.description}
         </p>
-        {/* <div
-          style={{
-            background: "rgba(0,0,0,0.2)",
-            border: "1px solid rgba(200,169,110,0.08)",
-            borderRadius: "10px",
-            padding: "12px",
-          }}
-        >
-          {[
-            ["Faction", campaign.worldSetup.mainFaction],
-            ["Location", campaign.worldSetup.startingLocation],
-            ["Mechanic", campaign.worldSetup.specialMechanic],
-          ].map(([k, v]) => (
-            <div
-              key={k}
-              style={{
-                display: "flex",
-                gap: "8px",
-                marginBottom: "4px",
-                fontSize: "12px",
-              }}
-            >
-              <span
-                style={{
-                  color: "#5a4830",
-                  fontFamily: "serif",
-                  minWidth: "72px",
-                }}
-              >
-                {k}
-              </span>
-              <span style={{ color: "#8a6f3e", fontFamily: "serif" }}>{v}</span>
-            </div>
-          ))}
-        </div> */}
+        <div className="rounded-[10px] border border-[rgba(200,169,110,0.08)] bg-[rgba(0,0,0,0.2)] p-3">
+          {campaign.worldSetup &&
+            Object.entries(campaign.worldSetup).map(([key, value]) => (
+              <div key={key} className="grid grid-cols-2 gap-2">
+                <span className="font-serif text-[#5a4830]">
+                  {formatWorldSetupKey(key)}
+                </span>
+
+                <span className="font-serif truncate text-ellipsis text-[#8a6f3e]">
+                  {String(value)}
+                </span>
+              </div>
+            ))}
+        </div>
         <div
           style={{
             background: "rgba(124,58,237,0.07)",
@@ -213,9 +194,9 @@ export default function CampaignCard({
                 fontSize: "12px",
               }}
             >
-              by {campaign.authorName}
+              by {campaign.creator.name}
             </div>
-            {campaign.rating && (
+            {/* {campaign.rating && (
               <div
                 style={{
                   color: "#c8a96e",
@@ -226,7 +207,7 @@ export default function CampaignCard({
                 ★ {campaign.rating} · {campaign.playerCount?.toLocaleString()}{" "}
                 plays
               </div>
-            )}
+            )} */}
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {isOwner && (

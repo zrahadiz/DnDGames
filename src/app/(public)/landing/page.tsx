@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import D20Icon from "@/components/icons/d20Icon";
 import CornerRune from "@/components/ornaments/cornerRune";
@@ -10,6 +10,7 @@ import GoldBar from "@/components/ornaments/goldBar";
 import { BookOpen, BrainCircuit, Castle, Swords } from "lucide-react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
+import { useAuthStore } from "@/stores/auth-store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS — share these across every page
@@ -132,14 +133,14 @@ const campaigns = [
 export default function LandingPage() {
   const [hovered, setHovered] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const { user, fetchUser } = useAuthStore();
   const router = useRouter();
 
   const loginHandle = async () => {
     setIsPending(true);
     try {
-      const response = await api.get("/auth/me");
-      console.log("Current user:", response);
-      if (response.data?.user) {
+      console.log("Current user:", user);
+      if (user) {
         router.push("/lobby");
       } else {
         router.push("/login");
@@ -150,6 +151,10 @@ export default function LandingPage() {
       setIsPending(false);
     }
   };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   return (
     <>
