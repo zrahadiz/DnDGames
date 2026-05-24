@@ -8,7 +8,7 @@ declare global {
 }
 
 // Global singleton state (persists across hot reloads)
-if (!window.__TOAST_GLOBALS__) {
+if (typeof window !== "undefined" && !window.__TOAST_GLOBALS__) {
   window.__TOAST_GLOBALS__ = {
     listeners: [],
     id: 0,

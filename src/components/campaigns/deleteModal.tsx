@@ -1,13 +1,13 @@
-import type { Campaign } from "@/types/campaigns";
+import type { CampaignWithRelation } from "@/types/campaigns";
 
 export default function DeleteModal({
   campaign,
   onClose,
   onConfirm,
 }: {
-  campaign: Campaign;
+  campaign: CampaignWithRelation;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: ({ campaign }: { campaign: CampaignWithRelation }) => void;
 }) {
   return (
     <div
@@ -91,7 +91,7 @@ export default function DeleteModal({
               Keep It
             </button>
             <button
-              onClick={onConfirm}
+              onClick={() => onConfirm({ campaign })}
               style={{
                 flex: 1,
                 padding: "10px",

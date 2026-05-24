@@ -19,7 +19,7 @@ export default function Loading({
   return (
     <div
       className={`flex flex-col items-center justify-center ${
-        fullscreen ? "fixed inset-0 bg-black/40 z-50" : ""
+        fullscreen ? "fixed inset-0 bg-black/40 z-[9999]" : ""
       }`}
     >
       <Swords className="animate-spin h-10 w-10 text-blue-500 z-50" />

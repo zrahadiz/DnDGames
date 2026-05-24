@@ -36,7 +36,14 @@ export default function CampaignModal({
 }: {
   campaign?: CampaignWithRelation;
   onClose: () => void;
-  onSave: (d: CampaignForm) => void;
+  onSave: ({
+    form,
+    id,
+  }: {
+    form: CampaignForm;
+    id?: string;
+    isEdit?: boolean;
+  }) => void;
 }) {
   const isEdit = !!campaign;
 
@@ -353,7 +360,13 @@ export default function CampaignModal({
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => onSave(form)}
+                  onClick={() =>
+                    onSave({
+                      form,
+                      id: campaign?.id,
+                      isEdit,
+                    })
+                  }
                   className="flex-1 rounded-xl text-sm font-semibold font-cinzel tracking-wide cursor-pointer transition-all duration-200 hover:-translate-y-0.5 border border-[rgba(200,169,110,0.45)] text-[#e8d5a3]"
                   style={{
                     background: "linear-gradient(135deg,#3d2e10,#2a1f0a)",

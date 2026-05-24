@@ -6,8 +6,6 @@ import type { CampaignForm, CampaignWithRelation } from "@/types/campaigns";
 import api from "@/lib/axios";
 import CampaignCard from "@/components/campaigns/campaignCard";
 import CampaignModal from "@/components/campaigns/campaignModal";
-
-import PageBg from "@/components/layout/pageBackground";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import DeleteModal from "@/components/campaigns/deleteModal";
 import { ThemeSelector } from "@/components/forms/themeSelector";
@@ -35,7 +33,7 @@ export default function CampaignsPage() {
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<ThemeOption | null>(null);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(2);
+  const [limit, setLimit] = useState(6);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 6,
@@ -89,10 +87,17 @@ export default function CampaignsPage() {
     }
   }, []);
 
-  const handleSave = async (form: CampaignForm) => {
-    console.log("form:", form);
+  const saveCampaign = async ({
+    form,
+    id,
+    isEdit = false,
+  }: {
+    form: CampaignForm;
+    id?: string;
+    isEdit?: boolean;
+  }) => {
     setLoadingState(true);
-    setLoadingText("Creating Campaign...");
+    setLoadingText(isEdit ? "Updating Campaign..." : "Creating Campaign...");
     try {
       const { theme, worldSetup, ...rest } = form;
       const payload = {
@@ -105,18 +110,57 @@ export default function CampaignsPage() {
         ),
       };
       console.log("payload: ", payload);
+      const { data } = isEdit
+        ? await api.patch(`/campaigns/${id}`, payload)
+        : await api.post("/campaigns", payload);
 
-      const { data } = await api.post("/campaigns", payload);
-      console.log("resp: ", data);
-      toast("Campaign Created successfully", {
+      console.log("resp:", data);
+      if (isEdit) {
+        setEditTarget(null);
+      } else {
+        setCreateOpen(false);
+      }
+      getCampaigns();
+      toast(
+        isEdit
+          ? "Campaign Updated successfully"
+          : "Campaign Created successfully",
+        {
+          type: "success",
+
+          position: "top-center",
+
+          duration: 5000,
+        },
+      );
+    } catch (error) {
+      console.error(error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
+  const deleteCampaign = async ({
+    campaign,
+  }: {
+    campaign: CampaignWithRelation;
+  }) => {
+    setLoadingState(true);
+    setLoadingText("Deleting Campaign...");
+    try {
+      await api.delete(`/campaigns/${campaign.id}`);
+      setDeleteTarget(null);
+      getCampaigns();
+      toast("Campaign Deleted successfully", {
         type: "success",
         position: "top-center",
         duration: 5000,
       });
-      getCampaigns();
-      setCreateOpen(false);
     } catch (error) {
-      console.error(error);
       console.error(error);
       toast(getErrorMessage(error), {
         type: "error",
@@ -130,7 +174,6 @@ export default function CampaignsPage() {
   return (
     <>
       <div className="min-h-screen px-6 py-20">
-        <PageBg />
         <Loading status={loadingState} fullscreen text={loadingText} />
         <header className="border-b border-[rgba(200,169,110,0.1)] pt-20 pb-10 text-center">
           <p className="mb-2.5 font-serif text-[10px] uppercase tracking-[0.3em] text-[#8a6f3e]">
@@ -281,24 +324,21 @@ export default function CampaignsPage() {
       {createOpen && (
         <CampaignModal
           onClose={() => setCreateOpen(false)}
-          onSave={handleSave}
+          onSave={saveCampaign}
         />
       )}
       {editTarget && (
         <CampaignModal
           campaign={editTarget}
           onClose={() => setEditTarget(null)}
-          onSave={handleSave}
+          onSave={saveCampaign}
         />
       )}
       {deleteTarget && (
         <DeleteModal
           campaign={deleteTarget}
           onClose={() => setDeleteTarget(null)}
-          onConfirm={() => {
-            setCampaigns((p) => p.filter((c) => c.id !== deleteTarget.id));
-            setDeleteTarget(null);
-          }}
+          onConfirm={deleteCampaign}
         />
       )}
     </>
