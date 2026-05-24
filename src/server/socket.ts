@@ -137,7 +137,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("send_message", async ({ roomId, sender, content }) => {
+  socket.on("send_message", async ({ roomId, sender, content, turnIndex }) => {
     console.log(`send message from: ${sender} to ${roomId}, text = ${content}`);
 
     if (!sender || !roomId || !content) {
@@ -161,9 +161,17 @@ io.on("connection", (socket) => {
       .returning();
 
     console.log(message);
+
+    let indexTurn;
+    if (sender != "ai") {
+      indexTurn = turnIndex + 1;
+      console.log(indexTurn);
+    }
+
     io.to(roomKey).emit("room_update", {
       type: "send_message",
       message,
+      turnIndex: indexTurn,
     });
   });
 

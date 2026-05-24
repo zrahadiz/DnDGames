@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 
 import api from "@/lib/axios";
@@ -9,8 +9,8 @@ import character1 from "@/assets/images/character1.svg";
 import character2 from "@/assets/images/character2.png";
 import character3 from "@/assets/images/character3.png";
 
+import Loading from "@/components/ui/loading";
 import { CardHero } from "@/components/ui/playerHero";
-import { Button } from "@/components/ui/button";
 import { socket } from "@/lib/socket";
 
 export default function Home() {
@@ -37,15 +37,17 @@ export default function Home() {
     players: Player[];
   }
 
-  const [messages, setMessages] = useState<{ role: string; text: string }[]>(
+  const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
     []
   );
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<any[]>([]);
+  const [turnIndex, setTurnIndex] = useState(0);
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [input, setInput] = useState("");
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const params = useParams();
   const id = params.id; // <-- "7"
@@ -57,16 +59,6 @@ export default function Home() {
     try {
       const { data } = await api.get(`/rooms/detail?room_id=${id}`);
       const roomData = data.roomsDetail[0];
-      // 👇 Check if user still exists in the room
-      // const stillInRoom = roomData.players.some(
-      //   (p: Player) => p.user_id === currentUserId
-      // );
-
-      // if (!stillInRoom) {
-      //   console.log("User not in this room anymore, redirecting to lobby.");
-      //   router.replace("/lobby");
-      //   return;
-      // }
 
       setRoom(roomData);
       setPlayers(roomData.players);
@@ -75,10 +67,6 @@ export default function Home() {
         userId: currentUserId,
       });
 
-      // setMessages((prev) => [
-      //   ...prev,
-      //   { role: "ai", text: roomData.firstMessage },
-      // ]);
       console.log("Rooms fetched: ", data.roomsDetail);
       console.log("Players Fetched: ", data.roomsDetail[0].players);
     } catch (error) {
@@ -101,7 +89,7 @@ export default function Home() {
       if (Array.isArray(allMessages)) {
         // Use .map() to transform each message object
         const formattedMessages = allMessages.map((message) => ({
-          role: message.sender,
+          sender: message.sender,
           text: message.content,
         }));
 
@@ -120,33 +108,51 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+    const currentUserId = Number(localStorage.getItem("user_id"));
+    // const currentPlayerTurnId = players[turnIndex]?.user_id;
+
+    const playerInfo = players.find((p: Player) => p.user_id === currentUserId);
+    console.log(players);
+
+    console.log(playerInfo);
 
     socket.emit("send_message", {
       roomId: id,
-      sender: "player",
+      sender: playerInfo.character_name,
       content: input,
+      turnIndex,
     });
 
     setInput("");
   };
 
-  const askAi = async (prompt: string) => {
-    if (!input.trim()) return;
+  const askAi = async () => {
+    setLoadingState(true);
+    setLoadingText("Dungeon Master are thinking...");
+    const lastMessage = messages.slice(-players.length);
+    const aiPrompt =
+      "The response for each hero is as follows:\n" +
+      lastMessage.map((m) => `${m.sender} = ${m.text}`).join("\n");
+    console.log(aiPrompt);
+    try {
+      const initAI = await api.post("ai", { prompt: aiPrompt });
+      const aiResponse = initAI.data.text;
+      console.log(aiResponse);
 
-    // Add player message
-    setMessages((prev) => [...prev, { role: "player", text: input }]);
+      socket.emit("send_message", {
+        roomId: id,
+        sender: "ai",
+        content: aiResponse,
+        turnIndex,
+      });
+    } catch (error) {
+      console.error("Error leaving room:", error);
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
 
-    // Call AI API (for now: fake AI response)
-    const res = await fetch("/api/ai", {
-      method: "POST",
-      body: JSON.stringify({ prompt: input }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const data = await res.json();
-    console.log("AI response:", data.text);
-
-    setMessages((prev) => [...prev, { role: "ai", text: data.text }]);
-    setInput("");
+    setTurnIndex(0); // Reset the turn index to the first player
   };
 
   useEffect(() => {
@@ -160,11 +166,11 @@ export default function Home() {
     socket.on("room_update", (update) => {
       console.log("Room update received:", update);
       if (update.type === "send_message") {
-        console.log(update.message);
+        setTurnIndex(update.turnIndex);
         const messageInfo = update.message[0];
         setMessages((prev) => [
           ...prev,
-          { role: messageInfo.sender, text: messageInfo.content },
+          { sender: messageInfo.sender, text: messageInfo.content },
         ]);
       }
     });
@@ -173,13 +179,31 @@ export default function Home() {
     };
   }, [socket]);
 
+  useEffect(() => {
+    console.log("ti: ", turnIndex);
+    if (players.length > 0 && turnIndex === players.length) {
+      console.log(
+        "All players have taken their turn! Running end-of-turn logic."
+      );
+      askAi();
+    }
+  }, [turnIndex, players]);
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   // Split the players array into two halves
   const half = Math.ceil(players.length / 2);
   const leftPlayers = players.slice(0, half);
   const rightPlayers = players.slice(half);
 
   return (
-    <div className="flex flex-col justify-center py-5 px-10 bg-gray-100 max-h-screen w-full">
+    <div className="flex flex-col justify-center py-5 px-10 bg-gray-100 h-screen w-full">
+      <Loading status={loadingState} fullscreen text={loadingText} />
       {/* Header */}
       <h1 className="hidden md:block text-3xl font-extrabold text-gray-800 mb-4 text-center shrink-0">
         Dungeon Room - {room?.title}
@@ -196,6 +220,7 @@ export default function Home() {
                 image={character2}
                 name={player.character_name}
                 role={`${player.character_class} - Level ${player.level}`}
+                isTurn={players[turnIndex]?.user_id == player.user_id}
               />
             ))}
           </div>
@@ -210,17 +235,20 @@ export default function Home() {
             </h1>
 
             {/* Messages (scrollable) */}
-            <div className="flex-1 overflow-y-auto mb-4 space-y-2 min-h-0">
+            <div
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto mb-4 space-y-2 min-h-0"
+            >
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`p-2 rounded-lg ${
-                    msg.role === "ai"
+                    msg.sender === "ai"
                       ? "bg-purple-100 text-purple-800"
                       : "bg-blue-100 text-blue-800"
                   }`}
                 >
-                  <b>{msg.role === "ai" ? "Dungeon Master" : "You"}:</b>{" "}
+                  <b>{msg.sender === "ai" ? "Dungeon Master" : msg.sender}:</b>{" "}
                   {msg.text}
                 </div>
               ))}
@@ -253,6 +281,7 @@ export default function Home() {
                 image={character2}
                 name={player.character_name}
                 role={`${player.character_class} - Level ${player.level}`}
+                isTurn={players[turnIndex]?.user_id == player.user_id}
               />
             ))}
           </div>
@@ -268,6 +297,7 @@ export default function Home() {
               image={character3}
               name={player.character_name}
               role={`${player.character_class} - Level ${player.level}`}
+              isTurn={players[turnIndex]?.user_id == player.user_id}
             />
           </div>
         ))}
