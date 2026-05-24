@@ -182,7 +182,7 @@ export default function CampaignCard({
                   rounded-lg border border-[rgba(200,169,110,0.22)]
                   bg-transparent p-1.5
                   text-[#8a6f3e]
-                  transition hover:bg-[rgba(200,169,110,0.08)]
+                  transition hover:bg-[rgba(200,169,110,0.08)] cursor-pointer
                 "
                 >
                   <svg
@@ -206,7 +206,7 @@ export default function CampaignCard({
                   rounded-lg border border-[rgba(239,68,68,0.22)]
                   bg-transparent p-1.5
                   text-[#f87171]
-                  transition hover:bg-[rgba(239,68,68,0.08)]
+                  transition hover:bg-[rgba(239,68,68,0.08)] cursor-pointer
                 "
                 >
                   <svg
@@ -238,6 +238,7 @@ export default function CampaignCard({
               transition
               hover:brightness-110
               active:scale-[0.98]
+              cursor-pointer
             "
             >
               Play
