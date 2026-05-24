@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Cinzel } from "next/font/google";
 import { SocketProvider } from "@/context/SocketContext";
 
 import "./globals.css";
+import CustomToaster from "@/components/feedback/customToaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} antialiased`}
       >
         <SocketProvider>{children}</SocketProvider>
+        <CustomToaster />
       </body>
     </html>
   );

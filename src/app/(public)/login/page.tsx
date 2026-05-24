@@ -5,7 +5,7 @@ import api from "@/lib/axios";
 import { createAuthClient } from "better-auth/client";
 import { ShieldAlert, Pickaxe } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Loading from "@/components/ui/loading";
+import Loading from "@/components/feedback/loading";
 import CornerRune from "@/components/ornaments/cornerRune";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import Embers from "@/components/ornaments/embers";

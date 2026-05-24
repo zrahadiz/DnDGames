@@ -3,18 +3,18 @@ import { useState } from "react";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { Campaign } from "@/types/campaigns";
+import type { CampaignWithRelation } from "@/types/campaigns";
 
 type Props = {
-  campaign: Campaign;
+  campaign: CampaignWithRelation;
 
   isOwner: boolean;
 
-  onEdit: (c: Campaign) => void;
+  onEdit: (c: CampaignWithRelation) => void;
 
-  onDelete: (c: Campaign) => void;
+  onDelete: (c: CampaignWithRelation) => void;
 
-  onPlay: (c: Campaign) => void;
+  onPlay: (c: CampaignWithRelation) => void;
 };
 
 export default function CampaignCard({
@@ -31,117 +31,94 @@ export default function CampaignCard({
 
   const [hovered, setHovered] = useState(false);
 
-  const s: React.CSSProperties = {
-    background: "linear-gradient(160deg,#1a1208,#120d1a)",
-    border: `1px solid ${hovered ? "rgba(200,169,110,0.45)" : "rgba(200,169,110,0.15)"}`,
-    borderRadius: "16px",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    transition: "all 0.25s",
-    transform: hovered ? "translateY(-4px)" : "none",
-    boxShadow: hovered ? "0 16px 40px rgba(0,0,0,0.4)" : "none",
-  };
-
   function formatWorldSetupKey(key: string) {
     return key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
   }
   return (
     <div
-      style={s}
+      className={`
+      flex flex-col overflow-hidden rounded-2xl border
+      bg-[linear-gradient(160deg,#1a1208,#120d1a)]
+      transition-all duration-200
+      ${
+        hovered
+          ? "translate-y-[-4px] border-[rgba(200,169,110,0.45)] shadow-[0_16px_40px_rgba(0,0,0,0.4)]"
+          : "border-[rgba(200,169,110,0.15)]"
+      }
+    `}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div
-        style={{
-          height: "6px",
-          background: campaign.isOfficial
-            ? "linear-gradient(90deg,rgba(200,169,110,0.7),rgba(124,58,237,0.5))"
-            : "linear-gradient(90deg,rgba(167,139,250,0.5),rgba(45,212,191,0.3))",
-        }}
+        className={`h-[6px] ${
+          campaign.isOfficial
+            ? "bg-[linear-gradient(90deg,rgba(200,169,110,0.7),rgba(124,58,237,0.5))]"
+            : "bg-[linear-gradient(90deg,rgba(167,139,250,0.5),rgba(45,212,191,0.3))]"
+        }`}
       />
-      <div
-        style={{
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          flex: 1,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: "8px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "6px",
-              alignItems: "center",
-            }}
-          >
+
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <Icon className="h-4 w-4 text-yellow-600" />
+
             <span
-              style={{
-                fontSize: "11px",
-                padding: "3px 10px",
-                borderRadius: "999px",
-                fontFamily: "'Cinzel',serif",
-                background: "rgba(200,169,110,0.1)",
-                border: "1px solid rgba(200,169,110,0.2)",
-                color: "#8a6f3e",
-                letterSpacing: "0.08em",
-              }}
+              className="
+              rounded-full border border-[rgba(200,169,110,0.2)]
+              bg-[rgba(200,169,110,0.1)]
+              px-2.5 py-[3px]
+              font-['Cinzel']
+              text-[11px]
+              tracking-[0.08em]
+              text-[#8a6f3e]
+            "
             >
               {campaign.theme.name}
             </span>
+
             {campaign.isOfficial && (
               <span
-                style={{
-                  fontSize: "11px",
-                  padding: "2px 8px",
-                  borderRadius: "999px",
-                  background: "rgba(200,169,110,0.12)",
-                  border: "1px solid rgba(200,169,110,0.28)",
-                  color: "#c8a96e",
-                  fontFamily: "serif",
-                  fontStyle: "italic",
-                }}
+                className="
+                rounded-full border border-[rgba(200,169,110,0.28)]
+                bg-[rgba(200,169,110,0.12)]
+                px-2 py-[2px]
+                font-serif text-[11px] italic text-[#c8a96e]
+              "
               >
                 ✦ Official
               </span>
             )}
           </div>
         </div>
+
+        {/* Title */}
         <h3
-          style={{
-            fontFamily: "'Cinzel',serif",
-            color: "#e8d5a3",
-            fontSize: "15px",
-            letterSpacing: "0.04em",
-            margin: 0,
-          }}
+          className="
+          m-0
+          font-['Cinzel']
+          text-[15px]
+          tracking-[0.04em]
+          text-[#e8d5a3]
+        "
         >
           {campaign.title}
         </h3>
+
+        {/* Description */}
         <p
-          style={{
-            fontFamily: "Georgia,serif",
-            color: "#7a6548",
-            fontStyle: "italic",
-            fontSize: "13px",
-            lineHeight: 1.75,
-            margin: 0,
-            flex: 1,
-          }}
+          className="
+          m-0 flex-1
+          font-serif text-[13px]
+          italic leading-[1.75]
+          text-[#7a6548]
+          line-clamp-4
+        "
         >
           {campaign.description}
         </p>
+
+        {/* World Setup */}
         <div className="rounded-[10px] border border-[rgba(200,169,110,0.08)] bg-[rgba(0,0,0,0.2)] p-3">
           {campaign.worldSetup &&
             Object.entries(campaign.worldSetup).map(([key, value]) => (
@@ -150,79 +127,63 @@ export default function CampaignCard({
                   {formatWorldSetupKey(key)}
                 </span>
 
-                <span className="font-serif truncate text-ellipsis text-[#8a6f3e]">
+                <span className="truncate font-serif text-[#8a6f3e]">
                   {String(value)}
                 </span>
               </div>
             ))}
         </div>
+
+        {/* Objective */}
         <div
-          style={{
-            background: "rgba(124,58,237,0.07)",
-            border: "1px solid rgba(167,139,250,0.12)",
-            borderRadius: "10px",
-            padding: "10px 12px",
-          }}
+          className="
+          rounded-[10px]
+          border border-[rgba(167,139,250,0.12)]
+          bg-[rgba(124,58,237,0.07)]
+          px-3 py-2.5
+        "
         >
-          <p
-            style={{
-              color: "#9a85c4",
-              fontFamily: "Georgia,serif",
-              fontStyle: "italic",
-              fontSize: "12px",
-              margin: 0,
-            }}
-          >
-            <span style={{ color: "#6a5490" }}>Objective: </span>
+          <p className="m-0 font-serif text-xs italic text-[#9a85c4] line-clamp-2">
+            <span className="text-[#6a5490]">Objective:</span>
             {campaign.startingObjective}
           </p>
         </div>
+
+        {/* Footer */}
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingTop: "10px",
-            borderTop: "1px solid rgba(200,169,110,0.1)",
-          }}
+          className="
+          flex items-center justify-between
+          border-t border-[rgba(200,169,110,0.1)]
+          pt-2.5
+        "
         >
           <div>
-            <div
-              style={{
-                color: "#5a4830",
-                fontFamily: "serif",
-                fontSize: "12px",
-              }}
-            >
+            <div className="font-serif text-xs text-[#5a4830]">
               by {campaign.creator.name}
             </div>
+
+            {/* Rating */}
             {/* {campaign.rating && (
-              <div
-                style={{
-                  color: "#c8a96e",
-                  fontFamily: "serif",
-                  fontSize: "12px",
-                }}
-              >
-                ★ {campaign.rating} · {campaign.playerCount?.toLocaleString()}{" "}
-                plays
-              </div>
-            )} */}
+            <div className="font-serif text-xs text-[#c8a96e]">
+              ★ {campaign.rating} ·{" "}
+              {campaign.playerCount?.toLocaleString()} plays
+            </div>
+          )} */}
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+
+          <div className="flex items-center gap-2">
             {isOwner && (
               <>
+                {/* Edit */}
                 <button
                   onClick={() => onEdit(campaign)}
                   title="Edit"
-                  style={{
-                    padding: "6px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(200,169,110,0.22)",
-                    background: "transparent",
-                    color: "#8a6f3e",
-                    cursor: "pointer",
-                  }}
+                  className="
+                  rounded-lg border border-[rgba(200,169,110,0.22)]
+                  bg-transparent p-1.5
+                  text-[#8a6f3e]
+                  transition hover:bg-[rgba(200,169,110,0.08)]
+                "
                 >
                   <svg
                     viewBox="0 0 16 16"
@@ -236,17 +197,17 @@ export default function CampaignCard({
                     <path d="M11 2l3 3-8 8H3v-3l8-8z" />
                   </svg>
                 </button>
+
+                {/* Delete */}
                 <button
                   onClick={() => onDelete(campaign)}
                   title="Delete"
-                  style={{
-                    padding: "6px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(239,68,68,0.22)",
-                    background: "transparent",
-                    color: "#f87171",
-                    cursor: "pointer",
-                  }}
+                  className="
+                  rounded-lg border border-[rgba(239,68,68,0.22)]
+                  bg-transparent p-1.5
+                  text-[#f87171]
+                  transition hover:bg-[rgba(239,68,68,0.08)]
+                "
                 >
                   <svg
                     viewBox="0 0 16 16"
@@ -262,19 +223,22 @@ export default function CampaignCard({
                 </button>
               </>
             )}
+
+            {/* Play */}
             <button
               onClick={() => onPlay(campaign)}
-              style={{
-                padding: "7px 14px",
-                borderRadius: "10px",
-                fontFamily: "'Cinzel',serif",
-                fontSize: "12px",
-                background: "linear-gradient(135deg,#2a1f0a,#1e1808)",
-                border: "1px solid rgba(200,169,110,0.35)",
-                color: "#d4b87a",
-                cursor: "pointer",
-                letterSpacing: "0.05em",
-              }}
+              className="
+              rounded-[10px]
+              border border-[rgba(200,169,110,0.35)]
+              bg-[linear-gradient(135deg,#2a1f0a,#1e1808)]
+              px-3.5 py-[7px]
+              font-['Cinzel']
+              text-xs tracking-[0.05em]
+              text-[#d4b87a]
+              transition
+              hover:brightness-110
+              active:scale-[0.98]
+            "
             >
               Play
             </button>

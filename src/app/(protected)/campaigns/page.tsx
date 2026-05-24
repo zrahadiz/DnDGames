@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Divider from "@/components/ornaments/divider";
-import type { Campaign } from "@/types/campaigns";
+import type { CampaignForm, CampaignWithRelation } from "@/types/campaigns";
 import api from "@/lib/axios";
 import CampaignCard from "@/components/campaigns/campaignCard";
 import CampaignModal from "@/components/campaigns/campaignModal";
@@ -11,47 +11,119 @@ import PageBg from "@/components/layout/pageBackground";
 import { PlusIcon, SearchIcon } from "lucide-react";
 import DeleteModal from "@/components/campaigns/deleteModal";
 import { ThemeSelector } from "@/components/forms/themeSelector";
-import { Theme } from "@/types/theme";
+import { ThemeOption } from "@/types/theme";
 import { useAuthStore } from "@/stores/auth-store";
+import Loading from "@/components/feedback/loading";
+import { toast } from "@/lib/toast";
+import { getErrorMessage } from "@/lib/errors";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const { user } = useAuthStore();
+  const [campaigns, setCampaigns] = useState<CampaignWithRelation[]>([]);
+  const { user, fetchUser } = useAuthStore();
+  const [loadingState, setLoadingState] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
 
   const [search, setSearch] = useState("");
-  const [theme, setTheme] = useState<Theme | null>(null);
+  const [theme, setTheme] = useState<ThemeOption | null>(null);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(6);
+  const [limit, setLimit] = useState(2);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 6,
+    total: 0,
+    totalPages: 1,
+  });
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Campaign | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
+  const [editTarget, setEditTarget] = useState<CampaignWithRelation | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<CampaignWithRelation | null>(
+    null,
+  );
 
   const getCampaigns = async () => {
     console.time("fetch campaigns");
-
-    const { data } = await api.get("campaigns", {
-      params: {
-        search,
-        theme: theme?.id,
-        page,
-        limit,
-      },
-    });
-    console.timeEnd("fetch campaigns");
-    console.log(data);
-    setCampaigns(data.data);
+    setLoadingState(true);
+    setLoadingText("Getting Campaigns...");
+    try {
+      const { data } = await api.get("campaigns", {
+        params: {
+          search,
+          theme: theme?.id,
+          page,
+          limit,
+        },
+      });
+      console.timeEnd("fetch campaigns");
+      console.log(data);
+      setCampaigns(data.data);
+      setPagination(data.pagination);
+    } catch (error) {
+      console.error(error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
   };
 
   useEffect(() => {
     getCampaigns();
   }, [search, theme, page, limit]);
 
-  const handleSave = (data: Record<string, unknown>) => {
-    if (editTarget) {
-      setEditTarget(null);
-    } else {
+  useEffect(() => {
+    if (!user) {
+      fetchUser();
+    }
+  }, []);
+
+  const handleSave = async (form: CampaignForm) => {
+    console.log("form:", form);
+    setLoadingState(true);
+    setLoadingText("Creating Campaign...");
+    try {
+      const { theme, worldSetup, ...rest } = form;
+      const payload = {
+        ...rest,
+        themeId: theme?.id,
+        worldSetup: Object.fromEntries(
+          worldSetup
+            .filter((item) => item.key.trim() && item.value.trim())
+            .map((item) => [item.key, item.value]),
+        ),
+      };
+      console.log("payload: ", payload);
+
+      const { data } = await api.post("/campaigns", payload);
+      console.log("resp: ", data);
+      toast("Campaign Created successfully", {
+        type: "success",
+        position: "top-center",
+        duration: 5000,
+      });
+      getCampaigns();
       setCreateOpen(false);
+    } catch (error) {
+      console.error(error);
+      console.error(error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
     }
   };
 
@@ -59,6 +131,7 @@ export default function CampaignsPage() {
     <>
       <div className="min-h-screen px-6 py-20">
         <PageBg />
+        <Loading status={loadingState} fullscreen text={loadingText} />
         <header className="border-b border-[rgba(200,169,110,0.1)] pt-20 pb-10 text-center">
           <p className="mb-2.5 font-serif text-[10px] uppercase tracking-[0.3em] text-[#8a6f3e]">
             ✦ The Codex ✦
@@ -125,18 +198,82 @@ export default function CampaignsPage() {
               </p>
             </div>
           ) : (
-            <div className=" grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
-              {campaigns.map((c) => (
-                <CampaignCard
-                  key={c.id}
-                  campaign={c}
-                  isOwner={c.createdBy === user?.id}
-                  onEdit={setEditTarget}
-                  onDelete={setDeleteTarget}
-                  onPlay={(c) => console.log("play", c.id)}
-                />
-              ))}
-            </div>
+            <>
+              <div className=" grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-5">
+                {campaigns.map((c) => (
+                  <CampaignCard
+                    key={c.id}
+                    campaign={c}
+                    isOwner={c.createdBy === user?.id}
+                    onEdit={setEditTarget}
+                    onDelete={setDeleteTarget}
+                    onPlay={(c) => console.log("play", c.id)}
+                  />
+                ))}
+              </div>
+              {pagination.totalPages > 1 && (
+                <Pagination className="mt-8">
+                  <PaginationContent className="gap-1">
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page > 1) setPage((prev) => prev - 1);
+                        }}
+                        className={`
+                          rounded-lg border border-[rgba(200,169,110,0.2)] bg-transparent
+                          font-cinzel text-[11px] tracking-widest text-[#5a4830]
+                          transition-all hover:border-[rgba(200,169,110,0.4)] hover:text-[#c8a96e] hover:bg-[rgba(200,169,110,0.06)]
+                          ${page === 1 ? "pointer-events-none" : ""}
+                        `}
+                      />
+                    </PaginationItem>
+
+                    {Array.from(
+                      { length: pagination.totalPages },
+                      (_, i) => i + 1,
+                    ).map((p) => (
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          href="#"
+                          isActive={p === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(p);
+                          }}
+                          className={`
+              rounded-lg border font-cinzel text-[12px] tracking-wider transition-all
+              ${
+                p === page
+                  ? "border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] text-[#d4b87a] pointer-events-none"
+                  : "border-[rgba(200,169,110,0.12)] bg-transparent text-[#5a4830] hover:border-[rgba(200,169,110,0.35)] hover:text-[#c8a96e] hover:bg-[rgba(200,169,110,0.06)]"
+              }
+            `}
+                        />
+                      </PaginationItem>
+                    ))}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page < pagination.totalPages)
+                            setPage((prev) => prev + 1);
+                        }}
+                        className={`
+                          rounded-lg border border-[rgba(200,169,110,0.2)] bg-transparent
+                          font-cinzel text-[11px] tracking-widest text-[#5a4830]
+                          transition-all hover:border-[rgba(200,169,110,0.4)] hover:text-[#c8a96e] hover:bg-[rgba(200,169,110,0.06)]
+                          ${page === pagination.totalPages ? "pointer-events-none opacity-30" : ""}
+                        `}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </main>
       </div>

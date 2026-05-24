@@ -1,21 +1,25 @@
 import type { Campaign as BaseCampaign } from "@/server/validators/campaigns";
+import type { Users } from "@/server/validators/users";
+import { Theme, ThemeOption } from "./theme";
 
-type CampaignCreator = {
+export type WorldSetupField = {
   id: string;
-  name: string;
-  image: string;
-  email: string;
+  key: string;
+  value: string;
 };
 
-type CampaignTheme = {
-  id: string;
-  name: string;
-  icon: string;
+export type CampaignWithRelation = BaseCampaign & {
+  creator: Pick<Users, "id" | "name" | "image" | "email">;
+  theme: Pick<Theme, "id" | "name" | "icon">;
 };
 
-export type Campaign = BaseCampaign & {
-  creator: CampaignCreator;
-  theme: CampaignTheme;
-  // playerCount?: number;
-  // rating?: number;
+export type CampaignForm = {
+  title: string;
+  description: string;
+  backgroundLore: string;
+  startingObjective: string;
+  startingLocation: string;
+  isOfficial: boolean;
+  theme: ThemeOption | null;
+  worldSetup: WorldSetupField[];
 };

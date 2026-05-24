@@ -18,12 +18,12 @@ import {
 import api from "@/lib/axios";
 
 import { useThemeStore } from "@/stores/theme-store";
-import { Theme } from "@/types/theme";
+import { ThemeOption } from "@/types/theme";
 
 type ThemeSelectorProps = {
-  selectedTheme: Theme | null;
+  selectedTheme: ThemeOption | null;
 
-  onChange: (theme: Theme | null) => void;
+  onChange: (theme: ThemeOption | null) => void;
 
   isEditing?: boolean;
 
@@ -54,7 +54,7 @@ export function ThemeSelector({
     );
   }, [searchTerm, themes]);
 
-  const handleSelectTheme = (theme: Theme) => {
+  const handleSelectTheme = (theme: ThemeOption) => {
     if (!isEditing) return;
 
     if (selectedTheme?.id === theme.id) {
@@ -72,7 +72,7 @@ export function ThemeSelector({
     }
 
     try {
-      const { data } = await api.post("/themes", {
+      const { data } = await api.post("/master-theme", {
         name: searchTerm.trim(),
 
         icon: "Sparkles",

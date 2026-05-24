@@ -8,7 +8,7 @@ import api from "@/lib/axios";
 
 import lavaKnight from "@/assets/images/lavaKnight.png";
 
-import Loading from "@/components/ui/loading";
+import Loading from "@/components/feedback/loading";
 import { PlayerCard } from "@/components/ui/playerCard";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -59,7 +59,7 @@ export default function WaitingRoom() {
       const roomData = data.roomsDetail[0];
       // 👇 Check if user still exists in the room
       const stillInRoom = roomData.players.some(
-        (p: Player) => p.user_id === currentUserId
+        (p: Player) => p.user_id === currentUserId,
       );
 
       if (!stillInRoom) {
@@ -85,7 +85,7 @@ export default function WaitingRoom() {
     setLoadingText("Leaving room...");
     try {
       const response = await api.delete(
-        `/rooms/leave?room_id=${id}&user_id=${currentUserId}`
+        `/rooms/leave?room_id=${id}&user_id=${currentUserId}`,
       );
       console.log("Left room:", response.data);
       socket.emit("leave_room", {
@@ -106,7 +106,7 @@ export default function WaitingRoom() {
     const currentUserId = Number(localStorage.getItem("user_id"));
     const isHost = room?.host_id === currentUserId;
     const currentUserPlayer = players.find(
-      (player) => player.user_id === currentUserId
+      (player) => player.user_id === currentUserId,
     );
     console.log("Current User Player:", currentUserPlayer);
     console.log("Is Host (from handler):", isHost);
@@ -118,19 +118,19 @@ export default function WaitingRoom() {
       setLoadingText("Starting game...");
       try {
         const characterNames = room.players.map(
-          (value) => value.character_name
+          (value) => value.character_name,
         );
         const characterClasses = room.players.map(
-          (value) => value.character_class
+          (value) => value.character_class,
         );
         const aiPrompt = `Bisakah kamu berperan sebagai room master dari permainan Dungeon and Dragon (DnD), dengan judul ${
           room.title
         } yang bertema ${
           room.theme
         } dan yang bermain adalah 2 orang, dengan nama character ${characterNames.join(
-          ", "
+          ", ",
         )} dan role ${characterClasses.join(
-          ", "
+          ", ",
         )}. Jika bisa tolong langsung respon dengan skenarionya saja`;
         console.log(aiPrompt);
 
@@ -201,7 +201,7 @@ export default function WaitingRoom() {
         setPlayers((prevPlayers) => {
           // Check if the player already exists
           const exists = prevPlayers.some(
-            (p) => p.user_id === update.player.user_id
+            (p) => p.user_id === update.player.user_id,
           );
 
           if (exists) {
@@ -209,7 +209,7 @@ export default function WaitingRoom() {
             return prevPlayers.map((p) =>
               p.user_id === update.player.user_id
                 ? { ...p, ...update.player }
-                : p
+                : p,
             );
           } else {
             // If player is new, append to the array
@@ -220,7 +220,7 @@ export default function WaitingRoom() {
         console.log("Player left:", update.user_id);
         console.log("Current players before removal:", players);
         setPlayers((prevPlayers) =>
-          prevPlayers.filter((p) => p.user_id !== update.user_id)
+          prevPlayers.filter((p) => p.user_id !== update.user_id),
         );
         if (update.user_id === currentUserId && update.disconnected) {
           // If the update is about the current user leaving (not disconnecting), redirect to lobby
@@ -233,8 +233,8 @@ export default function WaitingRoom() {
           prevPlayers.map((p) =>
             p.user_id === update.player.user_id
               ? { ...p, is_ready: update.player.is_ready }
-              : p
-          )
+              : p,
+          ),
         );
         setIsPlayerReady(update.player.is_ready);
       } else if (update.type === "game_started") {
@@ -264,7 +264,7 @@ export default function WaitingRoom() {
     setHostPlayer(isHost);
 
     const readyPlayersCount = players.filter(
-      (player) => player.is_ready
+      (player) => player.is_ready,
     ).length;
     const totalPlayersCount = players.length - 1;
 
@@ -310,8 +310,8 @@ export default function WaitingRoom() {
                   player.user_id == room?.host_id
                     ? "Host"
                     : player.is_ready
-                    ? "Ready"
-                    : "Waiting"
+                      ? "Ready"
+                      : "Waiting"
                 }
                 avatarUrl={lavaKnight}
               />
@@ -329,8 +329,8 @@ export default function WaitingRoom() {
             {hostPlayer
               ? "Start Game"
               : isPlayerReady
-              ? "Unready" // 👈 change this
-              : "Ready"}
+                ? "Unready" // 👈 change this
+                : "Ready"}
           </Button>
         </div>
       </div>

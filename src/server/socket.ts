@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
     const player = await db.query.room_players.findFirst({
       where: and(
         eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId)
+        eq(room_players.room_id, roomId),
       ),
     });
 
@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     const player = await db.query.room_players.findFirst({
       where: and(
         eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId)
+        eq(room_players.room_id, roomId),
       ),
     });
 
@@ -88,12 +88,12 @@ io.on("connection", (socket) => {
       .update(room_players)
       .set({ is_ready: isReady })
       .where(
-        and(eq(room_players.room_id, roomId), eq(room_players.user_id, userId))
+        and(eq(room_players.room_id, roomId), eq(room_players.user_id, userId)),
       );
     const updatedPlayer = await db.query.room_players.findFirst({
       where: and(
         eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId)
+        eq(room_players.room_id, roomId),
       ),
     });
     io.to(roomKey).emit("room_update", {

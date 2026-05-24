@@ -31,10 +31,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
       });
 
       const { data } = await api.get("/auth/me");
-      console.log("userStore: ", data.user);
+      console.log("userStore: ", data);
+      console.log("userStore2: ", data?.user || null);
 
       set({
-        user: data.user,
+        user: data?.user || null,
         isLoading: false,
         isFetched: true,
       });

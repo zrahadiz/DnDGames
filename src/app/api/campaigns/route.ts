@@ -8,8 +8,6 @@ import { apiResponse } from "@/server/utils/apiResponse";
 
 export async function GET(req: NextRequest) {
   try {
-    console.time("db");
-
     const searchParams = req.nextUrl.searchParams;
 
     const page = Number(searchParams.get("page")) || 1;
@@ -44,7 +42,6 @@ export async function GET(req: NextRequest) {
 
         orderBy: (campaigns, { desc }) => [desc(campaigns.createdAt)],
       });
-      console.timeEnd("db");
 
       return apiResponse(200, {
         success: true,
