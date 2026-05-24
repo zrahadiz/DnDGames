@@ -9,7 +9,7 @@ import character1 from "@/assets/images/character1.svg";
 import character2 from "@/assets/images/character2.png";
 import character3 from "@/assets/images/character3.png";
 
-import Loading from "@/components/ui/loading";
+import Loading from "@/components/feedback/loading";
 import { CardHero } from "@/components/ui/playerHero";
 import { socket } from "@/lib/socket";
 
@@ -38,7 +38,7 @@ export default function Home() {
   }
 
   const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
-    []
+    [],
   );
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -118,7 +118,7 @@ export default function Home() {
 
     socket.emit("send_message", {
       roomId: id,
-      sender: playerInfo.character_name,
+      sender: "user",
       content: input,
       turnIndex,
     });
@@ -183,7 +183,7 @@ export default function Home() {
     console.log("ti: ", turnIndex);
     if (players.length > 0 && turnIndex === players.length) {
       console.log(
-        "All players have taken their turn! Running end-of-turn logic."
+        "All players have taken their turn! Running end-of-turn logic.",
       );
       askAi();
     }

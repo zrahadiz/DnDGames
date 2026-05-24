@@ -1,7 +1,7 @@
 import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
-import { messages, room_players, rooms } from "@/db/schema";
+import { messages, roomPlayers, rooms } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { use } from "react";
 import { disconnect } from "process";
@@ -35,10 +35,10 @@ io.on("connection", (socket) => {
     socketUserMap.set(socket.id, { roomId, userId });
 
     // Ideally fetch from DB
-    const player = await db.query.room_players.findFirst({
+    const player = await db.query.roomPlayers.findFirst({
       where: and(
-        eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId),
+        eq(roomPlayers.userId, userId),
+        eq(roomPlayers.roomId, roomId),
       ),
     });
 
@@ -63,10 +63,10 @@ io.on("connection", (socket) => {
     }
 
     // Ideally fetch from DB
-    const player = await db.query.room_players.findFirst({
+    const player = await db.query.roomPlayers.findFirst({
       where: and(
-        eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId),
+        eq(roomPlayers.userId, userId),
+        eq(roomPlayers.roomId, roomId),
       ),
     });
 
@@ -85,15 +85,15 @@ io.on("connection", (socket) => {
     const roomKey = `room_${roomId}`;
     // Update in DB
     await db
-      .update(room_players)
-      .set({ is_ready: isReady })
+      .update(roomPlayers)
+      .set({ isReady: isReady })
       .where(
-        and(eq(room_players.room_id, roomId), eq(room_players.user_id, userId)),
+        and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)),
       );
-    const updatedPlayer = await db.query.room_players.findFirst({
+    const updatedPlayer = await db.query.roomPlayers.findFirst({
       where: and(
-        eq(room_players.user_id, userId),
-        eq(room_players.room_id, roomId),
+        eq(roomPlayers.userId, userId),
+        eq(roomPlayers.roomId, roomId),
       ),
     });
     io.to(roomKey).emit("room_update", {
@@ -130,7 +130,7 @@ io.on("connection", (socket) => {
     // Update room status in DB
     await db
       .update(rooms)
-      .set({ status: "in_game" })
+      .set({ status: "playing" })
       .where(eq(rooms.id, roomId));
     io.to(roomKey).emit("room_update", {
       type: "game_started",
@@ -154,8 +154,8 @@ io.on("connection", (socket) => {
     const message = await db
       .insert(messages)
       .values({
-        room_id: roomId,
-        sender,
+        roomId,
+        senderType: sender,
         content,
       })
       .returning();
@@ -185,11 +185,11 @@ io.on("connection", (socket) => {
     // if (userMap) {
     //   // Remove the player from the database
     //   await db
-    //     .delete(room_players)
+    //     .delete(roomPlayers)
     //     .where(
     //       and(
-    //         eq(room_players.room_id, userMap.roomId),
-    //         eq(room_players.user_id, userMap.userId)
+    //         eq(roomPlayers.room_id, userMap.roomId),
+    //         eq(roomPlayers.user_id, userMap.userId)
     //       )
     //     );
     //   const roomKey = `room_${userMap.roomId}`;
