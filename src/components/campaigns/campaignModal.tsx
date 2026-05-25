@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import GoldBar from "../ornaments/goldBar";
 import Divider from "../ornaments/divider";
-import type { CampaignForm, CampaignWithRelation } from "@/types/campaigns";
+import type { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
 import { Button } from "../ui/button";
 import { ThemeSelector } from "../forms/themeSelector";
 import { Input } from "../ui/input";
@@ -34,7 +34,7 @@ export default function CampaignModal({
   onClose,
   onSave,
 }: {
-  campaign?: CampaignWithRelation;
+  campaign?: CampaignWithRelations;
   onClose: () => void;
   onSave: ({
     form,

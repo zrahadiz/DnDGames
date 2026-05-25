@@ -3,18 +3,18 @@ import { useState } from "react";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { CampaignWithRelation } from "@/types/campaigns";
+import type { CampaignWithRelations } from "@/types/campaigns";
 
 type Props = {
-  campaign: CampaignWithRelation;
+  campaign: CampaignWithRelations;
 
   isOwner: boolean;
 
-  onEdit: (c: CampaignWithRelation) => void;
+  onEdit: (c: CampaignWithRelations) => void;
 
-  onDelete: (c: CampaignWithRelation) => void;
+  onDelete: (c: CampaignWithRelations) => void;
 
-  onPlay: (c: CampaignWithRelation) => void;
+  onPlay: (c: CampaignWithRelations) => void;
 };
 
 export default function CampaignCard({

@@ -8,7 +8,7 @@ export type WorldSetupField = {
   value: string;
 };
 
-export type CampaignWithRelation = BaseCampaign & {
+export type CampaignWithRelations = BaseCampaign & {
   creator: Pick<Users, "id" | "name" | "image" | "email">;
   theme: Pick<Theme, "id" | "name" | "icon">;
 };

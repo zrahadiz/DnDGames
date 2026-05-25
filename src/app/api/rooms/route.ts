@@ -1,22 +1,135 @@
 // /pages/api/rooms/create.ts
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/db";
-import { rooms } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { rooms, RoomStatus, roomPlayers } from "@/db/schema";
+import { eq, and, ilike, count } from "drizzle-orm";
+import { apiResponse } from "@/server/utils/apiResponse";
+import { createroomSchema } from "@/server/validators/rooms";
+import { requiredUser } from "@/server/auth/requiredUser";
 
-export async function GET(req: Request) {
-  const searchParams = new URL(req.url).searchParams;
-  const room_id = searchParams.get("room_id");
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
 
-  const allRooms = await db
-    .select()
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+
+  const offset = (page - 1) * limit;
+
+  const search = searchParams.get("search");
+  const status = searchParams.get("status") as RoomStatus | null;
+  const campaign_id = searchParams.get("campaign_id");
+
+  const conditions = [];
+
+  if (search) {
+    conditions.push(ilike(rooms.name, `%${search}%`));
+  }
+
+  if (status) {
+    conditions.push(eq(rooms.status, status));
+  }
+
+  if (campaign_id) {
+    conditions.push(eq(rooms.campaignId, campaign_id));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const data = await db.query.rooms.findMany({
+    where: whereClause,
+    limit,
+    offset,
+    with: {
+      campaign: {
+        columns: {
+          id: true,
+          title: true,
+          description: true,
+        },
+      },
+      host: {
+        columns: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: (rooms, { desc }) => [desc(rooms.createdAt)],
+  });
+
+  const totalResult = await db
+    .select({
+      count: count(),
+    })
     .from(rooms)
-    .where(
-      and(
-        room_id ? eq(rooms.id, Number(room_id)) : undefined,
-        eq(rooms.status, "waiting")
-      )
-    );
+    .where(whereClause);
 
-  return NextResponse.json({ rooms: allRooms });
+  const total = totalResult[0].count;
+
+  return apiResponse(200, {
+    success: true,
+    message: "Rooms fetched successfully",
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const result = createroomSchema.safeParse(body);
+
+    if (!result.success) {
+      return apiResponse(400, {
+        success: false,
+        message: "Invalid input",
+        error: result.error.flatten(),
+      });
+    }
+
+    const currentUser = await requiredUser();
+
+    const data = await db.transaction(async (tx) => {
+      const [newRoom] = await tx
+        .insert(rooms)
+        .values({
+          ...result.data,
+          hostId: currentUser.user.id,
+        })
+        .returning();
+
+      const [player] = await tx
+        .insert(roomPlayers)
+        .values({
+          roomId: newRoom.id,
+          userId: currentUser.user.id,
+          role: "host",
+        })
+        .returning();
+
+      const { roomCode, ...safeRoom } = newRoom;
+
+      return {
+        room: safeRoom,
+        player,
+      };
+    });
+
+    return apiResponse(201, {
+      success: true,
+      message: "Room created successfully",
+      data,
+    });
+  } catch (error) {
+    console.error(error);
+    return apiResponse(500, {
+      success: false,
+      message: "Failed to create room",
+    });
+  }
 }

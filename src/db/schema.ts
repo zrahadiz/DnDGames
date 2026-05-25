@@ -25,6 +25,7 @@ export const roomStatusEnum = pgEnum("room_status", [
   "playing",
   "finished",
 ]);
+export type RoomStatus = (typeof roomStatusEnum.enumValues)[number];
 
 export const roomVisibilityEnum = pgEnum("room_visibility", [
   "public",
@@ -256,12 +257,6 @@ export const rooms = pgTable("rooms", {
     .notNull()
     .unique(),
 
-  visibility: roomVisibilityEnum("visibility").notNull().default("public"),
-
-  password: varchar("password", {
-    length: 255,
-  }),
-
   storySummary: text("story_summary"),
 
   currentProgression: text("current_progression"),
@@ -286,6 +281,17 @@ export const rooms = pgTable("rooms", {
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const roomRelations = relations(rooms, ({ one }) => ({
+  host: one(user, {
+    fields: [rooms.hostId],
+    references: [user.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [rooms.campaignId],
+    references: [campaigns.id],
+  }),
+}));
 
 /* =========================================================
    ROOM PLAYERS

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Divider from "@/components/ornaments/divider";
-import type { CampaignForm, CampaignWithRelation } from "@/types/campaigns";
+import type { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
 import api from "@/lib/axios";
 import CampaignCard from "@/components/campaigns/campaignCard";
 import CampaignModal from "@/components/campaigns/campaignModal";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/pagination";
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<CampaignWithRelation[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignWithRelations[]>([]);
   const { user, fetchUser } = useAuthStore();
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
@@ -42,12 +42,11 @@ export default function CampaignsPage() {
   });
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<CampaignWithRelation | null>(
+  const [editTarget, setEditTarget] = useState<CampaignWithRelations | null>(
     null,
   );
-  const [deleteTarget, setDeleteTarget] = useState<CampaignWithRelation | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] =
+    useState<CampaignWithRelations | null>(null);
 
   const getCampaigns = async () => {
     console.time("fetch campaigns");
@@ -147,7 +146,7 @@ export default function CampaignsPage() {
   const deleteCampaign = async ({
     campaign,
   }: {
-    campaign: CampaignWithRelation;
+    campaign: CampaignWithRelations;
   }) => {
     setLoadingState(true);
     setLoadingText("Deleting Campaign...");

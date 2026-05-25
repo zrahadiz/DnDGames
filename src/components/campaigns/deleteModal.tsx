@@ -1,13 +1,13 @@
-import type { CampaignWithRelation } from "@/types/campaigns";
+import type { CampaignWithRelations } from "@/types/campaigns";
 
 export default function DeleteModal({
   campaign,
   onClose,
   onConfirm,
 }: {
-  campaign: CampaignWithRelation;
+  campaign: CampaignWithRelations;
   onClose: () => void;
-  onConfirm: ({ campaign }: { campaign: CampaignWithRelation }) => void;
+  onConfirm: ({ campaign }: { campaign: CampaignWithRelations }) => void;
 }) {
   return (
     <div
