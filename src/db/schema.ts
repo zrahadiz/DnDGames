@@ -253,9 +253,7 @@ export const rooms = pgTable("rooms", {
 
   roomCode: varchar("room_code", {
     length: 10,
-  })
-    .notNull()
-    .unique(),
+  }),
 
   storySummary: text("story_summary"),
 
@@ -338,15 +336,9 @@ export const roomPlayers = pgTable(
 export const characters = pgTable("characters", {
   id: uuid("id").defaultRandom().primaryKey(),
 
-  userId: text("user_id")
+  roomPlayerId: uuid("room_player_id")
     .notNull()
-    .references(() => user.id, {
-      onDelete: "cascade",
-    }),
-
-  roomId: uuid("room_id")
-    .notNull()
-    .references(() => rooms.id, {
+    .references(() => roomPlayers.id, {
       onDelete: "cascade",
     }),
 

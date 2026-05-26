@@ -36,6 +36,7 @@ import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { Search, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
+import { CreateCharacterInput } from "@/server/validators/rooms";
 
 const STATUS_CONFIG = {
   waiting: {
@@ -134,21 +135,20 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<CharacterSuggestions | null>(
     null,
   );
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   const [joinRoomDialog, setJoinRoomDialog] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [joinRoomInput, setJoinRoomInput] = useState({
-    character_name: "",
-    character_races: "",
-    character_class: "",
+  const [roomId, setRoomId] = useState("");
+  const [characterForm, setCharacterForm] = useState<CreateCharacterInput>({
+    name: "",
+    race: "",
+    characterClass: "",
   });
 
   const handleJoinRoomInput = (
-    key: keyof typeof joinRoomInput,
+    key: keyof CreateCharacterInput,
     value: string,
   ) => {
-    setJoinRoomInput((prev) => ({
+    setCharacterForm((prev) => ({
       ...prev,
       [key]: value,
     }));
@@ -169,7 +169,7 @@ export default function Home() {
       );
       console.log("Character suggestions:", data);
       setSuggestions(data.data);
-      setSelectedRoomId(room_id);
+      setRoomId(room_id);
       setJoinRoomDialog(true);
     } catch (error) {
       console.error("Error fetching character suggestions:", error);
@@ -182,23 +182,21 @@ export default function Home() {
     }
   };
 
-  const setRace = (value: string) =>
-    setJoinRoomInput((prev) => ({ ...prev, character_races: value }));
-
-  const setClass = (value: string) =>
-    setJoinRoomInput((prev) => ({ ...prev, character_class: value }));
-
   const joinRoom = async () => {
     setJoinRoomDialog(false);
     setLoadingState(true);
     setLoadingText("Joining room...");
     try {
-      const response = await api.post("/rooms/join", joinRoomInput);
+      const payload = {
+        roomId: roomId,
+        character: characterForm,
+      };
+      const response = await api.post("/rooms/join", payload);
       socket.emit("join_room", {
-        roomId: selectedRoomId,
+        roomId: payload.roomId,
       });
       console.log("Joined Room: ", response.data);
-      router.push("/waiting-room/" + selectedRoomId);
+      router.push("/waiting-room/" + payload.roomId);
     } catch (error) {
       console.error("Error creating room:", error);
       toast(getErrorMessage(error), {
@@ -519,7 +517,7 @@ export default function Home() {
       <JoinRoomDialog
         open={joinRoomDialog}
         onOpenChange={setJoinRoomDialog}
-        joinRoomInput={joinRoomInput}
+        joinRoomInput={characterForm}
         handleJoinRoomInput={handleJoinRoomInput}
         onJoin={joinRoom}
         suggestions={suggestions}

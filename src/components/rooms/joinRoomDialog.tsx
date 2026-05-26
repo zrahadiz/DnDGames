@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
+import { CreateCharacterInput } from "@/server/validators/rooms";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RaceSuggestion {
@@ -30,17 +31,11 @@ interface CharacterSuggestions {
   classes: ClassSuggestion[];
 }
 
-interface JoinRoomInput {
-  character_name: string;
-  character_races: string;
-  character_class: string;
-}
-
 interface JoinRoomDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  joinRoomInput: JoinRoomInput;
-  handleJoinRoomInput: (key: keyof JoinRoomInput, value: string) => void;
+  joinRoomInput: CreateCharacterInput;
+  handleJoinRoomInput: (key: keyof CreateCharacterInput, value: string) => void;
   onJoin: () => void;
   suggestions: CharacterSuggestions | null;
 }
@@ -200,13 +195,11 @@ export default function JoinRoomDialog({
               <div>
                 <CustomFieldLabel>Hero Name</CustomFieldLabel>
                 <Input
-                  id="character_name"
+                  id="name"
                   type="text"
                   placeholder="What shall the bards call you?"
-                  value={joinRoomInput.character_name}
-                  onChange={(e) =>
-                    handleJoinRoomInput("character_name", e.target.value)
-                  }
+                  value={joinRoomInput.name}
+                  onChange={(e) => handleJoinRoomInput("name", e.target.value)}
                   className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif italic text-sm"
                 />
               </div>
@@ -215,18 +208,16 @@ export default function JoinRoomDialog({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <CustomFieldLabel>Race / Lineage</CustomFieldLabel>
-                  {joinRoomInput.character_races && (
+                  {joinRoomInput.race && (
                     <span className="text-[11px] font-cinzel tracking-wide text-[#c8a96e]">
-                      ✦ {joinRoomInput.character_races}
+                      ✦ {joinRoomInput.race}
                     </span>
                   )}
                 </div>
                 <OptionList
                   items={suggestions?.races ?? []}
-                  selected={joinRoomInput.character_races}
-                  onSelect={(value) =>
-                    handleJoinRoomInput("character_races", value)
-                  }
+                  selected={joinRoomInput.race ?? ""}
+                  onSelect={(value) => handleJoinRoomInput("race", value)}
                   emptyText="No race suggestions available."
                 />
               </div>
@@ -244,18 +235,18 @@ export default function JoinRoomDialog({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <CustomFieldLabel>Class / Calling</CustomFieldLabel>
-                  {joinRoomInput.character_class && (
+                  {joinRoomInput.characterClass && (
                     <span className="text-[11px] font-cinzel tracking-wide text-[#c4b5fd]">
-                      ✦ {joinRoomInput.character_class}
+                      ✦ {joinRoomInput.characterClass}
                     </span>
                   )}
                 </div>
 
                 <OptionList
                   items={suggestions?.classes ?? []}
-                  selected={joinRoomInput.character_class}
+                  selected={joinRoomInput.characterClass ?? ""}
                   onSelect={(value) =>
-                    handleJoinRoomInput("character_class", value)
+                    handleJoinRoomInput("characterClass", value)
                   }
                   emptyText="No class suggestions available."
                 />
@@ -269,21 +260,19 @@ export default function JoinRoomDialog({
             style={{ borderTop: "1px solid rgba(200,169,110,0.1)" }}
           >
             {/* Selection summary */}
-            {(joinRoomInput.character_races ||
-              joinRoomInput.character_class) && (
+            {(joinRoomInput.race || joinRoomInput.characterClass) && (
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                {joinRoomInput.character_races && (
+                {joinRoomInput.race && (
                   <span className="rounded-full border border-[rgba(200,169,110,0.2)] bg-[rgba(200,169,110,0.07)] px-2.5 py-1 text-[11px] font-cinzel tracking-wide text-[#8a6f3e]">
-                    {joinRoomInput.character_races}
+                    {joinRoomInput.race}
                   </span>
                 )}
-                {joinRoomInput.character_races &&
-                  joinRoomInput.character_class && (
-                    <span className="text-[#3a2a14] text-xs">·</span>
-                  )}
-                {joinRoomInput.character_class && (
+                {joinRoomInput.race && joinRoomInput.characterClass && (
+                  <span className="text-[#3a2a14] text-xs">·</span>
+                )}
+                {joinRoomInput.characterClass && (
                   <span className="rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(124,58,237,0.07)] px-2.5 py-1 text-[11px] font-cinzel tracking-wide text-[#9a85c4]">
-                    {joinRoomInput.character_class}
+                    {joinRoomInput.characterClass}
                   </span>
                 )}
               </div>
@@ -302,9 +291,9 @@ export default function JoinRoomDialog({
                 type="button"
                 onClick={onJoin}
                 disabled={
-                  !joinRoomInput.character_name ||
-                  !joinRoomInput.character_races ||
-                  !joinRoomInput.character_class
+                  !joinRoomInput.name ||
+                  !joinRoomInput.race ||
+                  !joinRoomInput.characterClass
                 }
                 className="flex-1 rounded-xl border border-[rgba(200,169,110,0.45)] font-cinzel text-sm tracking-wider text-[#e8d5a3] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                 style={{

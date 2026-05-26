@@ -1,97 +1,123 @@
 // /pages/api/rooms/join.ts
-import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { room_players, rooms, users } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { roomPlayers, characters, rooms, user } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { apiResponse } from "@/server/utils/apiResponse";
+import { requiredUser } from "@/server/auth/requiredUser";
+import { joinRoomSchema } from "@/server/validators/roomPlayers";
 
 export async function POST(req: Request) {
-  const { room_id, user_id, character_name, character_class } =
-    await req.json();
+  const body = await req.json();
 
-  if (!room_id || !user_id || !character_name || !character_class) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+  console.log("body:", body);
+
+  const result = joinRoomSchema.safeParse(body);
+
+  console.log("result:", result);
+
+  if (!result.success) {
+    return apiResponse(400, {
+      success: false,
+      message: "Invalid Input",
+      error: result.error.flatten(),
+    });
   }
+  const currentUser = await requiredUser();
 
   try {
-    // Check if room exists
-    const room = await db.query.rooms.findFirst({
-      where: eq(rooms.id, room_id),
+    const data = await db.transaction(async (tx) => {
+      const room = await tx.query.rooms.findFirst({
+        where: eq(rooms.id, result.data.roomId),
+      });
+
+      if (!room) throw new Error("ROOM_NOT_FOUND");
+
+      const existingPlayer = await tx.query.roomPlayers.findFirst({
+        where: and(
+          eq(roomPlayers.roomId, result.data.roomId),
+          eq(roomPlayers.userId, currentUser.user.id),
+        ),
+      });
+
+      if (existingPlayer) throw new Error("ALREADY_JOINED");
+
+      const [{ count }] = await tx
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(roomPlayers)
+        .where(eq(roomPlayers.roomId, result.data.roomId));
+
+      if (count >= room.maxPlayers) throw new Error("ROOM_FULL");
+
+      const isHost = !room.hostId;
+
+      if (isHost) {
+        await tx
+          .update(rooms)
+          .set({
+            hostId: currentUser.user.id,
+          })
+          .where(eq(rooms.id, room.id));
+      }
+
+      const [newPlayer] = await tx
+        .insert(roomPlayers)
+        .values({
+          roomId: room.id,
+          userId: currentUser.user.id,
+          role: isHost ? "host" : "player",
+        })
+        .returning();
+
+      const [character] = await tx
+        .insert(characters)
+        .values({
+          roomPlayerId: newPlayer.id,
+          name: result.data.character.name,
+          race: result.data.character.race,
+          characterClass: result.data.character.characterClass,
+        })
+        .returning();
+
+      return {
+        player: newPlayer,
+        character,
+      };
     });
 
-    if (!room) {
-      return NextResponse.json({ error: "Room not found" }, { status: 404 });
-    }
-
-    // Check if user exists
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, user_id),
+    return apiResponse(201, {
+      success: true,
+      message: "Successfully joined room",
+      data,
     });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Check if room is full
-    const playerCount = await db
-      .select()
-      .from(room_players)
-      .where(eq(room_players.room_id, room_id))
-      .then((res) => res.length);
-
-    console.log("Room ID to join: ", room_id);
-
-    console.log("Current player count: ", playerCount);
-    console.log("Room max players: ", room.max_players);
-    if (playerCount >= room.max_players) {
-      return NextResponse.json({ error: "Room is full" }, { status: 400 });
-    }
-
-    // Check if user is already in the room
-    const existingPlayer = await db
-      .select()
-      .from(room_players)
-      .where(
-        and(
-          eq(room_players.room_id, room_id),
-          eq(room_players.user_id, user_id)
-        )
-      )
-      .limit(1)
-      .then((res) => res[0]);
-
-    if (existingPlayer) {
-      return NextResponse.json(
-        { error: "User already in the room" },
-        { status: 400 }
-      );
-    }
-
-    // check if room has host
-    if (!room.host_id) {
-      // If no host, set the joining user as host
-      await db
-        .update(rooms)
-        .set({ host_id: user_id })
-        .where(eq(rooms.id, room_id));
-    }
-
-    // Add player to the room
-    const [newPlayer] = await db
-      .insert(room_players)
-      .values({
-        room_id,
-        user_id,
-        character_name,
-        character_class,
-      })
-      .returning();
-
-    return NextResponse.json({ player: newPlayer }, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to join room" }, { status: 500 });
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "ROOM_NOT_FOUND":
+          return apiResponse(404, {
+            success: false,
+            message: "Room not found",
+          });
+
+        case "ALREADY_JOINED":
+          return apiResponse(400, {
+            success: false,
+            message: "You already joined this room",
+          });
+
+        case "ROOM_FULL":
+          return apiResponse(400, {
+            success: false,
+            message: "Room is full",
+          });
+      }
+    }
+
+    return apiResponse(500, {
+      success: false,
+      message: "Failed to join room",
+    });
   }
 }

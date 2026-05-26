@@ -1,10 +1,10 @@
 // /pages/api/rooms/create.ts
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/db";
-import { rooms, RoomStatus, roomPlayers } from "@/db/schema";
+import { rooms, RoomStatus, roomPlayers, characters } from "@/db/schema";
 import { eq, and, ilike, count } from "drizzle-orm";
 import { apiResponse } from "@/server/utils/apiResponse";
-import { createroomSchema } from "@/server/validators/rooms";
+import { createRoomWithCharacterSchema } from "@/server/validators/rooms";
 import { requiredUser } from "@/server/auth/requiredUser";
 
 export async function GET(req: NextRequest) {
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const result = createroomSchema.safeParse(body);
+    const result = createRoomWithCharacterSchema.safeParse(body);
 
     if (!result.success) {
       return apiResponse(400, {
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       const [newRoom] = await tx
         .insert(rooms)
         .values({
-          ...result.data,
+          ...result.data.room,
           hostId: currentUser.user.id,
         })
         .returning();
@@ -121,11 +121,22 @@ export async function POST(req: Request) {
         })
         .returning();
 
+      const [character] = await tx
+        .insert(characters)
+        .values({
+          roomPlayerId: player.id,
+          name: result.data.character.name,
+          race: result.data.character.race,
+          characterClass: result.data.character.characterClass,
+        })
+        .returning();
+
       const { roomCode, ...safeRoom } = newRoom;
 
       return {
         room: safeRoom,
         player,
+        character,
       };
     });
 

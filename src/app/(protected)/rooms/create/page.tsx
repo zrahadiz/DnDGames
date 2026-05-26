@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 
 import Loading from "@/components/feedback/loading";
 
-import { CreateRoomInput } from "@/server/validators/rooms";
+import {
+  CreateCharacterInput,
+  CreateRoomInput,
+} from "@/server/validators/rooms";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
@@ -14,6 +17,23 @@ import CampaignModal from "@/components/campaigns/campaignModal";
 import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
+import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
+import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
+
+interface RaceSuggestion {
+  name: string;
+  description: string;
+}
+
+interface ClassSuggestion {
+  name: string;
+  description: string;
+}
+
+interface CharacterSuggestions {
+  races: RaceSuggestion[];
+  classes: ClassSuggestion[];
+}
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
@@ -26,10 +46,11 @@ export default function CreateRoom() {
 
   const handleCampaignSelect = (campaign: CampaignWithRelations) => {
     setSelectedCampaign(campaign);
-    setField("campaignId", campaign.id);
+    setRoomField("campaignId", campaign.id);
   };
 
   const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
+
   const saveCampaign = async ({
     form,
     id,
@@ -90,20 +111,70 @@ export default function CreateRoom() {
     maxPlayers: 4,
   });
 
-  const setField = <K extends keyof CreateRoomInput>(
+  const [characterForm, setCharacterForm] = useState<CreateCharacterInput>({
+    name: "",
+    race: "",
+    characterClass: "",
+  });
+
+  const setRoomField = <K extends keyof CreateRoomInput>(
     key: K,
     value: CreateRoomInput[K],
   ) => {
     setRoomForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleCreateRoom = async (e: React.FormEvent) => {
+  const setCharacterField = <K extends keyof CreateCharacterInput>(
+    key: K,
+    value: CreateCharacterInput[K],
+  ) => {
+    setCharacterForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const [suggestions, setSuggestions] = useState<CharacterSuggestions | null>(
+    null,
+  );
+  const [joinRoomDialog, setJoinRoomDialog] = useState(false);
+  const openJoinDialog = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!roomForm.campaignId) {
+      toast("Please select a campaign first", {
+        type: "warning",
+      });
+      return;
+    }
+    console.log(
+      "Opening join dialog for room:",
+      "campaign:",
+      roomForm.campaignId,
+    );
+    setLoadingState(true);
+    setLoadingText("Fetching character suggestions...");
+    try {
+      const { data } = await api.get(
+        `/ai/characters?campaignId=${roomForm.campaignId}`,
+      );
+      console.log("Character suggestions:", data);
+      setSuggestions(data.data);
+      setJoinRoomDialog(true);
+    } catch (error) {
+      console.error("Error fetching character suggestions:", error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
+  const handleCreateRoom = async () => {
     setLoadingState(true);
     setLoadingText("Creating Room...");
     try {
       const payload = {
-        ...roomForm,
+        room: roomForm,
+        character: characterForm,
       };
       const { data } = await api.post("/rooms", payload);
       console.log("Room created:", data);
@@ -145,7 +216,7 @@ export default function CreateRoom() {
             </p>
           </div>
 
-          <form onSubmit={handleCreateRoom}>
+          <form onSubmit={openJoinDialog}>
             <div
               className="rounded-2xl border border-[rgba(200,169,110,0.25)] overflow-hidden"
               style={{
@@ -220,7 +291,7 @@ export default function CreateRoom() {
                         type="button"
                         onClick={() => {
                           setSelectedCampaign(null);
-                          setField("campaignId", "");
+                          setRoomField("campaignId", "");
                         }}
                         className="shrink-0 p-1 rounded-md text-[#5a4830] hover:text-[#f87171] transition-colors"
                         aria-label="Clear selection"
@@ -242,35 +313,7 @@ export default function CreateRoom() {
                 </div>
 
                 {/* Divider */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-[rgba(200,169,110,0.1)]" />
-                  <svg
-                    viewBox="0 0 48 16"
-                    width="40"
-                    height="14"
-                    aria-hidden="true"
-                  >
-                    <polygon
-                      points="0,8 8,2 16,8 8,14"
-                      fill="none"
-                      stroke="rgba(200,169,110,0.35)"
-                      strokeWidth="0.75"
-                    />
-                    <circle
-                      cx="24"
-                      cy="8"
-                      r="2"
-                      fill="rgba(200,169,110,0.45)"
-                    />
-                    <polygon
-                      points="32,8 40,2 48,8 40,14"
-                      fill="none"
-                      stroke="rgba(200,169,110,0.35)"
-                      strokeWidth="0.75"
-                    />
-                  </svg>
-                  <div className="flex-1 h-px bg-[rgba(200,169,110,0.1)]" />
-                </div>
+                <OrnamentalDivider />
 
                 {/* ── Room details ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -285,7 +328,7 @@ export default function CreateRoom() {
                     <Input
                       id="name"
                       value={roomForm.name}
-                      onChange={(e) => setField("name", e.target.value)}
+                      onChange={(e) => setRoomField("name", e.target.value)}
                       placeholder="The Lost Mines of Phandelver…"
                       required
                       className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif"
@@ -307,7 +350,7 @@ export default function CreateRoom() {
                       max={10}
                       value={roomForm.maxPlayers}
                       onChange={(e) =>
-                        setField("maxPlayers", Number(e.target.value))
+                        setRoomField("maxPlayers", Number(e.target.value))
                       }
                       className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-cinzel tracking-wider"
                     />
@@ -328,7 +371,7 @@ export default function CreateRoom() {
                       id="roomCode"
                       type="password"
                       value={roomForm.roomCode ?? ""}
-                      onChange={(e) => setField("roomCode", e.target.value)}
+                      onChange={(e) => setRoomField("roomCode", e.target.value)}
                       placeholder="Secret passphrase…"
                       className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif"
                     />
@@ -344,7 +387,7 @@ export default function CreateRoom() {
                     id="visibility"
                     checked={roomForm.visibility === "private"}
                     onCheckedChange={(checked) =>
-                      setField("visibility", checked ? "private" : "public")
+                      setRoomField("visibility", checked ? "private" : "public")
                     }
                     className="mt-0.5 border-[rgba(200,169,110,0.35)] data-[state=checked]:bg-[rgba(200,169,110,0.3)] data-[state=checked]:border-[rgba(200,169,110,0.6)]"
                   />
@@ -401,6 +444,15 @@ export default function CreateRoom() {
           </form>
         </div>
       </div>
+
+      <JoinRoomDialog
+        open={joinRoomDialog}
+        onOpenChange={setJoinRoomDialog}
+        joinRoomInput={characterForm}
+        handleJoinRoomInput={setCharacterField}
+        onJoin={handleCreateRoom}
+        suggestions={suggestions}
+      />
 
       {createCampaignOpen && (
         <CampaignModal
