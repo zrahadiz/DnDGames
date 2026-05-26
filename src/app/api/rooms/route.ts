@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   const search = searchParams.get("search");
   const status = searchParams.get("status") as RoomStatus | null;
-  const campaign_id = searchParams.get("campaign_id");
+  const campaign_id = searchParams.get("campaignId");
 
   const conditions = [];
 
@@ -45,6 +45,15 @@ export async function GET(req: NextRequest) {
           id: true,
           title: true,
           description: true,
+        },
+        with: {
+          theme: {
+            columns: {
+              id: true,
+              name: true,
+              icon: true,
+            },
+          },
         },
       },
       host: {

@@ -8,7 +8,6 @@ import { z } from "zod";
 import { rooms } from "@/db/schema";
 
 export const roomResponseSchema = createSelectSchema(rooms).omit({
-  id: true,
   createdAt: true,
   updatedAt: true,
   hostId: true,
