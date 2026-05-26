@@ -14,22 +14,11 @@ import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { CreateCharacterInput } from "@/server/validators/rooms";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface RaceSuggestion {
-  name: string;
-  description: string;
-}
-
-interface ClassSuggestion {
-  name: string;
-  description: string;
-}
-
-interface CharacterSuggestions {
-  races: RaceSuggestion[];
-  classes: ClassSuggestion[];
-}
+import {
+  RaceSuggestion,
+  ClassSuggestion,
+  CharacterSuggestions,
+} from "@/types/characters";
 
 interface JoinRoomDialogProps {
   open: boolean;

@@ -1,13 +1,5 @@
 "use client";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,8 +12,6 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Loading from "@/components/feedback/loading";
 
 import { useRouter } from "next/navigation";
@@ -32,6 +22,7 @@ import { RoomWithRelations } from "@/types/rooms";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
 import { CampaignWithRelations } from "@/types/campaigns";
+import { CharacterSuggestions } from "@/types/characters";
 import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { Search, UsersRound } from "lucide-react";
@@ -61,21 +52,6 @@ const STATUS_CONFIG = {
     bg: "bg-black/20",
   },
 };
-
-interface RaceSuggestion {
-  name: string;
-  description: string;
-}
-
-interface ClassSuggestion {
-  name: string;
-  description: string;
-}
-
-interface CharacterSuggestions {
-  races: RaceSuggestion[];
-  classes: ClassSuggestion[];
-}
 
 export default function Home() {
   const router = useRouter();
