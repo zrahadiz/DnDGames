@@ -8,6 +8,7 @@ const socket: Socket =
   io(URL, {
     autoConnect: false,
     transports: ["websocket"],
+    withCredentials: true,
   });
 
 if (process.env.NODE_ENV === "development") {

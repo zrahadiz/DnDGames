@@ -19,6 +19,7 @@ import {
   ClassSuggestion,
   CharacterSuggestions,
 } from "@/types/characters";
+import api from "@/lib/axios";
 
 interface JoinRoomDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ interface JoinRoomDialogProps {
   handleJoinRoomInput: (key: keyof CreateCharacterInput, value: string) => void;
   onJoin: () => void;
   suggestions: CharacterSuggestions | null;
+  onRetrySuggestions: () => void;
 }
 
 // ─── Option card inside dropdown ──────────────────────────────────────────────
@@ -148,6 +150,7 @@ export default function JoinRoomDialog({
   handleJoinRoomInput,
   onJoin,
   suggestions,
+  onRetrySuggestions,
 }: JoinRoomDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -197,7 +200,16 @@ export default function JoinRoomDialog({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <CustomFieldLabel>Race / Lineage</CustomFieldLabel>
-                  {joinRoomInput.race && (
+                  {suggestions?.status !== "completed" ? (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={onRetrySuggestions}
+                      className="rounded-xl border-[rgba(200,169,110,0.4)] bg-[#1a1208] font-cinzel text-sm tracking-wider text-[#d4b87a] shadow-[0_0_24px_rgba(200,169,110,0.12)] hover:border-[rgba(200,169,110,0.6)] hover:bg-[rgba(200,169,110,0.1)] hover:text-[#e8d5a3] cursor-pointer px-5 py-3"
+                    >
+                      Generate Race and Class Suggestions
+                    </Button>
+                  ) : (
                     <span className="text-[11px] font-cinzel tracking-wide text-[#c8a96e]">
                       ✦ {joinRoomInput.race}
                     </span>

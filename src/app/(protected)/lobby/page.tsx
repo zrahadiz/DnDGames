@@ -140,15 +140,30 @@ export default function Home() {
     setLoadingState(true);
     setLoadingText("Fetching character suggestions...");
     try {
-      const { data } = await api.get(
-        `/ai/characters?campaignId=${campaign_id}`,
-      );
+      const { data } = await api.get(`/master-character/${campaign_id}`);
       console.log("Character suggestions:", data);
       setSuggestions(data.data);
       setRoomId(room_id);
       setJoinRoomDialog(true);
     } catch (error) {
       console.error("Error fetching character suggestions:", error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
+  const handleRetrySuggestions = async (id?: string) => {
+    setLoadingState(true);
+    setLoadingText("Fetching character suggestions...");
+    try {
+      const { data } = await api.post(`ai/characters/${id}`);
+      setSuggestions(data.data);
+    } catch (error) {
+      console.error(error);
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -393,6 +408,17 @@ export default function Home() {
                           : "⚔ Join Room"}
                       </Button>
                     </div>
+                    <JoinRoomDialog
+                      open={joinRoomDialog}
+                      onOpenChange={setJoinRoomDialog}
+                      joinRoomInput={characterForm}
+                      handleJoinRoomInput={handleJoinRoomInput}
+                      onJoin={joinRoom}
+                      suggestions={suggestions}
+                      onRetrySuggestions={() =>
+                        handleRetrySuggestions(room.campaignId)
+                      }
+                    />
                   </div>
                 );
               })}
@@ -489,15 +515,6 @@ export default function Home() {
           </Button>
         </div>
       </div>
-
-      <JoinRoomDialog
-        open={joinRoomDialog}
-        onOpenChange={setJoinRoomDialog}
-        joinRoomInput={characterForm}
-        handleJoinRoomInput={handleJoinRoomInput}
-        onJoin={joinRoom}
-        suggestions={suggestions}
-      />
 
       <CampaignPickerDialog
         open={campaignDialogOpen}

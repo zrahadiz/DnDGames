@@ -3,49 +3,101 @@ import { Server } from "socket.io";
 import { db } from "@/db";
 import { messages, roomPlayers, rooms } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { use } from "react";
-import { disconnect } from "process";
+import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 
 const io = new Server(3001, {
-  cors: { origin: "*" }, // later: set to your frontend URL
+  cors: { origin: "*", credentials: true }, // later: set to your frontend URL
 });
 
 // Keep track of socket ↔ user mapping
-const socketUserMap = new Map<string, { roomId: number; userId: number }>();
+const socketUserMap = new Map<
+  string,
+  {
+    roomId: string;
+    userId: string;
+  }
+>();
+
+io.use(async (socket, next) => {
+  try {
+    const cookieHeader = socket.handshake.headers.cookie;
+
+    const currentUser = await getUserFromCookie(cookieHeader);
+
+    if (!currentUser) {
+      return next(new Error("Unauthorized"));
+    }
+    socket.data.user = currentUser;
+
+    next();
+  } catch (error) {
+    next(new Error("Authentication failed"));
+  }
+});
 
 io.on("connection", (socket) => {
-  console.log("user connected:", socket.id);
+  console.log("connected:", socket.data.user?.user.name);
   console.log("total connections:", io.engine.clientsCount);
 
-  socket.on("test", async ({ roomId, userId }) => {
+  socket.on("test", async ({ roomId }) => {
+    const currentUser = socket.data.user;
+    if (!currentUser) return;
+    const userId = currentUser.user.id;
     console.log("DATABASE_URL:", process.env.DATABASE_URL);
     console.log("Test event received:", { roomId, userId });
   });
-  // join room
-  socket.on("join_room", async ({ roomId, userId }) => {
-    if (!roomId || !userId) {
-      console.error("join_room missing roomId or userId", { roomId, userId });
-      return;
+  socket.on("join_room", async ({ roomId }: { roomId: string }) => {
+    try {
+      const currentUser = socket.data.user;
+      if (!currentUser) return;
+      const userId = currentUser.user.id;
+
+      if (!roomId || !userId) {
+        socket.emit("error_message", {
+          message: "roomId and userId are required",
+        });
+        return;
+      }
+
+      const roomKey = `room_${roomId}`;
+
+      socket.join(roomKey);
+
+      socketUserMap.set(socket.id, {
+        roomId,
+        userId,
+      });
+
+      const player = await db.query.roomPlayers.findFirst({
+        where: and(
+          eq(roomPlayers.userId, userId),
+          eq(roomPlayers.roomId, roomId),
+        ),
+
+        with: {
+          character: true,
+        },
+      });
+
+      if (!player) {
+        socket.emit("error_message", {
+          message: "Player not found",
+        });
+
+        return;
+      }
+
+      socket.to(roomKey).emit("room_update", {
+        type: "player_joined",
+        player,
+      });
+    } catch (error) {
+      console.error(error);
+
+      socket.emit("error_message", {
+        message: "Failed to join room",
+      });
     }
-
-    console.log(`User ${userId} joining room ${roomId}`);
-    const roomKey = `room_${roomId}`;
-    socket.join(roomKey);
-
-    socketUserMap.set(socket.id, { roomId, userId });
-
-    // Ideally fetch from DB
-    const player = await db.query.roomPlayers.findFirst({
-      where: and(
-        eq(roomPlayers.userId, userId),
-        eq(roomPlayers.roomId, roomId),
-      ),
-    });
-
-    io.to(roomKey).emit("room_update", {
-      type: "player_joined",
-      player, // full player object
-    });
   });
 
   //refresh room

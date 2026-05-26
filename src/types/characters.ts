@@ -9,6 +9,7 @@ export interface ClassSuggestion {
 }
 
 export interface CharacterSuggestions {
+  status: string;
   races: RaceSuggestion[];
   classes: ClassSuggestion[];
 }

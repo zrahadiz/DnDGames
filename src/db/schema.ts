@@ -186,11 +186,19 @@ export const campaigns = pgTable("campaigns", {
 
   startingObjective: text("starting_objective"),
 
-  worldSetup: jsonb("world_setup").notNull(),
+  worldSetup: jsonb("world_setup").$type<Record<string, string>>().notNull(),
 
   createdBy: text("created_by").references(() => user.id),
 
   isOfficial: boolean("is_official").default(true),
+
+  aiCharGenerationStatus: varchar("ai_char_generation_status", {
+    length: 20,
+  })
+    .notNull()
+    .default("pending"),
+
+  aiCharGenerationError: text("ai_char_generation_error"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 
@@ -211,6 +219,42 @@ export const themes = pgTable("themes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const campaignRaces = pgTable("campaign_races", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, {
+      onDelete: "cascade",
+    }),
+
+  name: varchar("name", {
+    length: 100,
+  }).notNull(),
+
+  description: text("description"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const campaignClasses = pgTable("campaign_classes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  campaignId: uuid("campaign_id")
+    .notNull()
+    .references(() => campaigns.id, {
+      onDelete: "cascade",
+    }),
+
+  name: varchar("name", {
+    length: 100,
+  }).notNull(),
+
+  description: text("description"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const campaignRelations = relations(campaigns, ({ one }) => ({
@@ -292,7 +336,7 @@ export const roomRelations = relations(rooms, ({ one }) => ({
 }));
 
 /* =========================================================
-   ROOM PLAYERS
+   ROOM PLAYERS & CHARACTERS
    Current realtime participation
 ========================================================= */
 
@@ -328,11 +372,6 @@ export const roomPlayers = pgTable(
   }),
 );
 
-/* =========================================================
-   CHARACTERS
-   Persistent RPG character
-========================================================= */
-
 export const characters = pgTable("characters", {
   id: uuid("id").defaultRandom().primaryKey(),
 
@@ -366,6 +405,13 @@ export const characters = pgTable("characters", {
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const roomPlayersRelation = relations(roomPlayers, ({ one }) => ({
+  character: one(characters, {
+    fields: [roomPlayers.id],
+    references: [characters.roomPlayerId],
+  }),
+}));
 
 /* =========================================================
    GAME EVENTS

@@ -5,6 +5,7 @@ import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { apiResponse } from "@/server/utils/apiResponse";
 import { updateCampaignSchema } from "@/server/validators/campaigns";
+import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 
 type Params = Promise<{ id: string }>;
 
@@ -87,6 +88,26 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
       })
       .where(eq(campaigns.id, id))
       .returning();
+
+    const shouldRegenerate =
+      (result.data.title ?? existingCampaign.title) !==
+        existingCampaign.title ||
+      (result.data.description ?? existingCampaign.description) !==
+        existingCampaign.description ||
+      (result.data.backgroundLore ?? existingCampaign.backgroundLore) !==
+        existingCampaign.backgroundLore ||
+      JSON.stringify(result.data.worldSetup ?? existingCampaign.worldSetup) !==
+        JSON.stringify(existingCampaign.worldSetup);
+
+    if (shouldRegenerate) {
+      await db
+        .update(campaigns)
+        .set({
+          aiCharGenerationStatus: "pending",
+        })
+        .where(eq(campaigns.id, id));
+      generateCampaignSuggestions(updatedCampaign).catch(console.error);
+    }
 
     return apiResponse(200, {
       success: true,

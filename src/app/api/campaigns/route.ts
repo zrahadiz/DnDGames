@@ -5,6 +5,7 @@ import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { createCampaignSchema } from "@/server/validators/campaigns";
 import { apiResponse } from "@/server/utils/apiResponse";
+import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 
 export async function GET(req: NextRequest) {
   try {
@@ -132,8 +133,11 @@ export async function POST(req: Request) {
       .values({
         ...result.data,
         createdBy: currentUser.user.id,
+        aiCharGenerationStatus: "pending",
       })
       .returning();
+
+    generateCampaignSuggestions(newCampaign).catch(console.error);
 
     return apiResponse(201, {
       success: true,

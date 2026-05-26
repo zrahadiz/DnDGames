@@ -188,7 +188,6 @@ export default function WaitingRoom() {
     fetchRooms();
     socket.emit("join_room", {
       roomId: id,
-      userId: currentUserId,
     });
   }, []);
 

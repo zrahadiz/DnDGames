@@ -19,21 +19,7 @@ import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
-
-interface RaceSuggestion {
-  name: string;
-  description: string;
-}
-
-interface ClassSuggestion {
-  name: string;
-  description: string;
-}
-
-interface CharacterSuggestions {
-  races: RaceSuggestion[];
-  classes: ClassSuggestion[];
-}
+import { CharacterSuggestions } from "@/types/characters";
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
@@ -152,13 +138,30 @@ export default function CreateRoom() {
     setLoadingText("Fetching character suggestions...");
     try {
       const { data } = await api.get(
-        `/ai/characters?campaignId=${roomForm.campaignId}`,
+        `/master-character/${roomForm.campaignId}`,
       );
       console.log("Character suggestions:", data);
       setSuggestions(data.data);
       setJoinRoomDialog(true);
     } catch (error) {
       console.error("Error fetching character suggestions:", error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
+  const handleRetrySuggestions = async () => {
+    setLoadingState(true);
+    setLoadingText("Fetching character suggestions...");
+    try {
+      const { data } = await api.post(`ai/characters/${roomForm.campaignId}`);
+      setSuggestions(data.data);
+    } catch (error) {
+      console.error(error);
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -452,6 +455,7 @@ export default function CreateRoom() {
         handleJoinRoomInput={setCharacterField}
         onJoin={handleCreateRoom}
         suggestions={suggestions}
+        onRetrySuggestions={handleRetrySuggestions}
       />
 
       {createCampaignOpen && (
