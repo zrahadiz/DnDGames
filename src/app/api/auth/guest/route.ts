@@ -3,7 +3,7 @@ import { guestSessions, user } from "@/db/schema";
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { generateToken, hashToken } from "@/helpers/encryptData";
+import { generateToken, hashToken } from "@/lib/encryptData";
 
 function generateGuestName() {
   return `Guest_${Math.random().toString(36).substring(2, 8)}`;

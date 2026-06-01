@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { messages, roomPlayers, rooms } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getUserFromCookie } from "./auth/getUserDataFromCookie";
+import { setIO } from "@/lib/socket-server";
+import { getRoomState } from "./rooms/getRoomState";
 
 const io = new Server(3001, {
   cors: { origin: "*", credentials: true }, // later: set to your frontend URL
@@ -46,6 +48,31 @@ io.on("connection", (socket) => {
     console.log("DATABASE_URL:", process.env.DATABASE_URL);
     console.log("Test event received:", { roomId, userId });
   });
+
+  socket.on("sync_room_state", async ({ roomId }: { roomId: string }) => {
+    try {
+      const room = await getRoomState(roomId);
+
+      if (!room) {
+        io.to(`room_${roomId}`).emit("room_update", {
+          type: "room_deleted",
+          roomId,
+        });
+
+        return;
+      }
+
+      io.to(`room_${roomId}`).emit("room_update", {
+        type: "room_state_updated",
+        room,
+      });
+      console.log("Emitted room_state_updated for room", roomId);
+      console.log("Current room state:", room);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
   socket.on("join_room", async ({ roomId }: { roomId: string }) => {
     try {
       const currentUser = socket.data.user;
@@ -86,11 +113,6 @@ io.on("connection", (socket) => {
 
         return;
       }
-
-      socket.to(roomKey).emit("room_update", {
-        type: "player_joined",
-        player,
-      });
     } catch (error) {
       console.error(error);
 
@@ -128,50 +150,6 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("toggle_ready", async ({ roomId, userId, isReady }) => {
-    console.log("toggle_ready event", { roomId, userId, isReady });
-    if (!roomId || !userId || isReady === undefined) {
-      console.error("toggle_ready missing params", { roomId, userId, isReady });
-      return;
-    }
-    const roomKey = `room_${roomId}`;
-    // Update in DB
-    await db
-      .update(roomPlayers)
-      .set({ isReady: isReady })
-      .where(
-        and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)),
-      );
-    const updatedPlayer = await db.query.roomPlayers.findFirst({
-      where: and(
-        eq(roomPlayers.userId, userId),
-        eq(roomPlayers.roomId, roomId),
-      ),
-    });
-    io.to(roomKey).emit("room_update", {
-      type: "player_toggled_ready",
-      player: updatedPlayer, // full player object
-    });
-  });
-
-  // leave room
-  socket.on("leave_room", async ({ roomId, userId }) => {
-    console.log("leave_room event", { roomId, userId });
-    if (!roomId || !userId) {
-      console.error("leave_room missing roomId or userId", { roomId, userId });
-      return;
-    }
-    console.log(`User ${userId} leaving room ${roomId}`);
-    const roomKey = `room_${roomId}`;
-    socket.leave(roomKey);
-    socketUserMap.delete(socket.id);
-    io.to(roomKey).emit("room_update", {
-      type: "player_left",
-      user_id: userId,
-      disconnected: false,
-    });
-  });
-
   socket.on("start_game", async ({ roomId }) => {
     console.log("start_game event", { roomId });
     if (!roomId) {
@@ -179,11 +157,6 @@ io.on("connection", (socket) => {
       return;
     }
     const roomKey = `room_${roomId}`;
-    // Update room status in DB
-    await db
-      .update(rooms)
-      .set({ status: "playing" })
-      .where(eq(rooms.id, roomId));
     io.to(roomKey).emit("room_update", {
       type: "game_started",
     });
@@ -228,37 +201,32 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    console.log("User disconnected:", socket.id);
-    socketUserMap.delete(socket.id);
-    // const userMap = socketUserMap.get(socket.id);
-    // console.log("Socket user map:", socketUserMap);
-    // console.log("Disconnected user info:", userMap);
-    // // If the user was tracked, handle their departure
-    // if (userMap) {
-    //   // Remove the player from the database
-    //   await db
-    //     .delete(roomPlayers)
-    //     .where(
-    //       and(
-    //         eq(roomPlayers.room_id, userMap.roomId),
-    //         eq(roomPlayers.user_id, userMap.userId)
-    //       )
-    //     );
-    //   const roomKey = `room_${userMap.roomId}`;
-    //   console.log(
-    //     `User ${userMap.userId} disconnected, removed from room ${userMap.roomId}`
-    //   );
-    //   // Emit an update to the room to remove the player from the UI
-    //   io.to(roomKey).emit("room_update", {
-    //     type: "player_left",
-    //     user_id: userMap.roomId,
-    //     disconnected: true,
-    //   });
+    const info = socketUserMap.get(socket.id);
 
-    // Clean up the map
-    // socketUserMap.delete(socket.id);
-    // }
+    if (!info) return;
+
+    await db
+      .update(roomPlayers)
+      .set({
+        isConnected: false,
+        lastSeenAt: new Date(),
+      })
+      .where(
+        and(
+          eq(roomPlayers.roomId, info.roomId),
+          eq(roomPlayers.userId, info.userId),
+        ),
+      );
+
+    socketUserMap.delete(socket.id);
+
+    io.to(`room_${info.roomId}`).emit("room_update", {
+      type: "player_disconnected",
+      userId: info.userId,
+    });
   });
 });
+
+setIO(io);
 
 console.log("✅ Socket server running on :3001");

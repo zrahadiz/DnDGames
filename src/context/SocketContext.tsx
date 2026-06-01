@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, ReactNode } from "react";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket-client";
 
 type SocketContextType = typeof socket;
 

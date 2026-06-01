@@ -17,7 +17,7 @@ import Loading from "@/components/feedback/loading";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket-client";
 import { RoomWithRelations } from "@/types/rooms";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
@@ -182,11 +182,16 @@ export default function Home() {
         roomId: roomId,
         character: characterForm,
       };
-      const response = await api.post("/rooms/join", payload);
-      socket.emit("join_room", {
-        roomId: payload.roomId,
-      });
-      console.log("Joined Room: ", response.data);
+      const { data } = await api.post("/rooms/join", payload);
+      if (data.success) {
+        socket.emit("join_room", {
+          roomId,
+        });
+        socket.emit("sync_room_state", {
+          roomId,
+        });
+      }
+      console.log("Joined Room: ", data.data);
       router.push("/waiting-room/" + payload.roomId);
     } catch (error) {
       console.error("Error creating room:", error);

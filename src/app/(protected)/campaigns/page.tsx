@@ -292,7 +292,9 @@ export default function CampaignsPage() {
                   : "border-[rgba(200,169,110,0.12)] bg-transparent text-[#5a4830] hover:border-[rgba(200,169,110,0.35)] hover:text-[#c8a96e] hover:bg-[rgba(200,169,110,0.06)]"
               }
             `}
-                        />
+                        >
+                          {p}
+                        </PaginationLink>
                       </PaginationItem>
                     ))}
 

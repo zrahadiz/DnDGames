@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { guestSessions } from "@/db/schema";
-import { hashToken } from "@/helpers/encryptData";
+import { hashToken } from "@/lib/encryptData";
 
 export async function getUserFromCookie(cookieHeader?: string) {
   if (!cookieHeader) return null;

@@ -324,7 +324,7 @@ export const rooms = pgTable("rooms", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const roomRelations = relations(rooms, ({ one }) => ({
+export const roomRelations = relations(rooms, ({ one, many }) => ({
   host: one(user, {
     fields: [rooms.hostId],
     references: [user.id],
@@ -333,6 +333,8 @@ export const roomRelations = relations(rooms, ({ one }) => ({
     fields: [rooms.campaignId],
     references: [campaigns.id],
   }),
+
+  players: many(roomPlayers),
 }));
 
 /* =========================================================
@@ -407,6 +409,11 @@ export const characters = pgTable("characters", {
 });
 
 export const roomPlayersRelation = relations(roomPlayers, ({ one }) => ({
+  room: one(rooms, {
+    fields: [roomPlayers.roomId],
+    references: [rooms.id],
+  }),
+
   character: one(characters, {
     fields: [roomPlayers.id],
     references: [characters.roomPlayerId],

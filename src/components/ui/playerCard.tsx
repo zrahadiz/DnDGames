@@ -4,17 +4,12 @@ import { Button } from "@/components/ui/button";
 
 interface PlayerCardProps {
   name: string;
-  status: "Waiting" | "Ready" | "Host";
+  status: boolean;
   avatarUrl: StaticImageData | string;
 }
 
 export function PlayerCard({ name, status, avatarUrl }: PlayerCardProps) {
-  const statusColor =
-    status === "Ready"
-      ? "bg-green-500"
-      : status === "Host"
-      ? "bg-blue-500"
-      : "bg-gray-400"; // Waiting
+  const statusColor = status === true ? "bg-green-500" : "bg-gray-400"; // Waiting
 
   return (
     <div className="relative col-span-1 h-36 justify-center items-center">
@@ -35,7 +30,7 @@ export function PlayerCard({ name, status, avatarUrl }: PlayerCardProps) {
           {name}
         </p>
         <span className={`text-xs px-2 py-1 rounded text-white ${statusColor}`}>
-          {status}
+          {status ? "Ready" : "Waiting"}
         </span>
       </div>
     </div>

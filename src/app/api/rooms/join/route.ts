@@ -7,24 +7,24 @@ import { requiredUser } from "@/server/auth/requiredUser";
 import { joinRoomSchema } from "@/server/validators/roomPlayers";
 
 export async function POST(req: Request) {
-  const body = await req.json();
-
-  console.log("body:", body);
-
-  const result = joinRoomSchema.safeParse(body);
-
-  console.log("result:", result);
-
-  if (!result.success) {
-    return apiResponse(400, {
-      success: false,
-      message: "Invalid Input",
-      error: result.error.flatten(),
-    });
-  }
-  const currentUser = await requiredUser();
-
   try {
+    const body = await req.json();
+
+    console.log("body:", body);
+
+    const result = joinRoomSchema.safeParse(body);
+
+    console.log("result:", result);
+
+    if (!result.success) {
+      return apiResponse(400, {
+        success: false,
+        message: "Invalid Input",
+        error: result.error.flatten(),
+      });
+    }
+    const currentUser = await requiredUser();
+
     const data = await db.transaction(async (tx) => {
       const room = await tx.query.rooms.findFirst({
         where: eq(rooms.id, result.data.roomId),

@@ -11,7 +11,7 @@ import character3 from "@/assets/images/character3.png";
 
 import Loading from "@/components/feedback/loading";
 import { CardHero } from "@/components/ui/playerHero";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket-client";
 
 export default function Home() {
   interface Player {
