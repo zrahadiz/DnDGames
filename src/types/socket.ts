@@ -11,6 +11,7 @@ export type RoomUpdate =
   | {
       type: "room_state_updated";
       room: RoomDetail;
+      kick?: boolean;
     }
   | {
       type: "room_deleted";

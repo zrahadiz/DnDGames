@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       if (count >= room.maxPlayers) throw new Error("ROOM_FULL");
 
       const isHost = !room.hostId;
+      console.log("isHost:", isHost);
 
       if (isHost) {
         await tx
@@ -59,6 +60,16 @@ export async function POST(req: Request) {
             hostId: currentUser.user.id,
           })
           .where(eq(rooms.id, room.id));
+
+        await tx
+          .update(roomPlayers)
+          .set({ role: "host" })
+          .where(
+            and(
+              eq(roomPlayers.roomId, room.id),
+              eq(roomPlayers.userId, currentUser.user.id),
+            ),
+          );
       }
 
       const [newPlayer] = await tx

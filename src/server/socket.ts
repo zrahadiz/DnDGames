@@ -49,43 +49,43 @@ io.on("connection", (socket) => {
     console.log("Test event received:", { roomId, userId });
   });
 
-  socket.on("sync_room_state", async ({ roomId }: { roomId: string }) => {
-    try {
-      const room = await getRoomState(roomId);
+  socket.on(
+    "sync_room_state",
+    async ({ roomId, kick = false }: { roomId: string; kick: boolean }) => {
+      try {
+        const room = await getRoomState(roomId);
 
-      if (!room) {
+        if (!room) {
+          io.to(`room_${roomId}`).emit("room_update", {
+            type: "room_deleted",
+            roomId,
+          });
+
+          return;
+        }
+
         io.to(`room_${roomId}`).emit("room_update", {
-          type: "room_deleted",
-          roomId,
+          type: "room_state_updated",
+          room,
+          kick,
         });
-
-        return;
+        // console.log("Emitted room_state_updated for room", roomId);
+        // console.log("Current room state:", room);
+      } catch (error) {
+        console.error(error);
       }
-
-      io.to(`room_${roomId}`).emit("room_update", {
-        type: "room_state_updated",
-        room,
-      });
-      console.log("Emitted room_state_updated for room", roomId);
-      console.log("Current room state:", room);
-    } catch (error) {
-      console.error(error);
-    }
-  });
+    },
+  );
 
   socket.on("join_room", async ({ roomId }: { roomId: string }) => {
     try {
       const currentUser = socket.data.user;
-      if (!currentUser) return;
-      const userId = currentUser.user.id;
 
-      if (!roomId || !userId) {
-        socket.emit("error_message", {
-          message: "roomId and userId are required",
-        });
+      if (!currentUser) {
         return;
       }
 
+      const userId = currentUser.user.id;
       const roomKey = `room_${roomId}`;
 
       socket.join(roomKey);
@@ -95,24 +95,24 @@ io.on("connection", (socket) => {
         userId,
       });
 
-      const player = await db.query.roomPlayers.findFirst({
-        where: and(
-          eq(roomPlayers.userId, userId),
-          eq(roomPlayers.roomId, roomId),
-        ),
+      await db
+        .update(roomPlayers)
+        .set({
+          isConnected: true,
+          lastSeenAt: new Date(),
+        })
+        .where(
+          and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)),
+        );
 
-        with: {
-          character: true,
-        },
+      const room = await getRoomState(roomId);
+
+      if (!room) return;
+
+      io.to(roomKey).emit("room_update", {
+        type: "room_state_updated",
+        room,
       });
-
-      if (!player) {
-        socket.emit("error_message", {
-          message: "Player not found",
-        });
-
-        return;
-      }
     } catch (error) {
       console.error(error);
 
@@ -201,29 +201,39 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    const info = socketUserMap.get(socket.id);
+    try {
+      const info = socketUserMap.get(socket.id);
 
-    if (!info) return;
+      if (!info) return;
 
-    await db
-      .update(roomPlayers)
-      .set({
-        isConnected: false,
-        lastSeenAt: new Date(),
-      })
-      .where(
-        and(
-          eq(roomPlayers.roomId, info.roomId),
-          eq(roomPlayers.userId, info.userId),
-        ),
-      );
+      await db
+        .update(roomPlayers)
+        .set({
+          isConnected: false,
+          lastSeenAt: new Date(),
+        })
+        .where(
+          and(
+            eq(roomPlayers.roomId, info.roomId),
+            eq(roomPlayers.userId, info.userId),
+          ),
+        );
 
-    socketUserMap.delete(socket.id);
+      socketUserMap.delete(socket.id);
 
-    io.to(`room_${info.roomId}`).emit("room_update", {
-      type: "player_disconnected",
-      userId: info.userId,
-    });
+      const room = await getRoomState(info.roomId);
+
+      console.log("User disconnected:", info.userId, "from room:", info.roomId);
+
+      if (!room) return;
+
+      io.to(`room_${info.roomId}`).emit("room_update", {
+        type: "room_state_updated",
+        room,
+      });
+    } catch (error) {
+      console.error(error);
+    }
   });
 });
 
