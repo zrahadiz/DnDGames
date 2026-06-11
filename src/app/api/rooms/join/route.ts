@@ -78,6 +78,7 @@ export async function POST(req: Request) {
           roomId: room.id,
           userId: currentUser.user.id,
           role: isHost ? "host" : "player",
+          isReady: isHost,
         })
         .returning();
 

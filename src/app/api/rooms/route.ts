@@ -118,6 +118,7 @@ export async function POST(req: Request) {
           roomId: newRoom.id,
           userId: currentUser.user.id,
           role: "host",
+          isReady: true,
         })
         .returning();
 

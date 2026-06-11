@@ -72,6 +72,7 @@ export async function DELETE(req: Request, { params }: { params: Params }) {
           .update(roomPlayers)
           .set({
             role: "host",
+            isReady: true,
           })
           .where(eq(roomPlayers.id, nextHost.id));
 

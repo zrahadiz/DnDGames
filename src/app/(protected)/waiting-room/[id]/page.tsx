@@ -113,12 +113,15 @@ export default function WaitingRoom() {
         const { data } = await api.patch(`/rooms/${roomId}/start`);
 
         if (data.success) {
-          console.log("Emitting sync_room_state after leaving room");
-          socket.emit("sync_room_state", {
+          console.log("Emitting game_started event");
+          // socket.emit("sync_room_state", {
+          //   roomId,
+          // });
+          socket.emit("start_game", {
             roomId,
           });
         }
-        router.replace(`/rooms/${roomId}`);
+        // router.replace(`/rooms/${roomId}`);
       } catch (error) {
         console.error("Error starting game:", error);
       } finally {
