@@ -2,6 +2,7 @@ import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
 import { messages, roomPlayers, rooms } from "@/db/schema";
+import { GameEventWithRelations, TurnProgress } from "@/types/gameEvents";
 import { eq, and } from "drizzle-orm";
 import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";
@@ -77,6 +78,26 @@ io.on("connection", (socket) => {
     },
   );
 
+  socket.on(
+    "game_event_created",
+    async ({
+      roomId,
+      event,
+    }: {
+      roomId: string;
+      event: GameEventWithRelations;
+    }) => {
+      console.log("game_event_created received", {
+        roomId,
+        eventId: event.id,
+      });
+
+      io.to(`room_${roomId}`).emit("game_event_created", {
+        event,
+      });
+    },
+  );
+
   socket.on("join_room", async ({ roomId }: { roomId: string }) => {
     try {
       const currentUser = socket.data.user;
@@ -122,34 +143,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  //refresh room
-  socket.on("refresh_room", async ({ roomId, userId }) => {
-    if (!roomId || !userId) {
-      console.error("join_room missing roomId or userId", { roomId, userId });
-      return;
-    }
-    console.log(`User ${userId} joining room ${roomId}`);
-    const roomKey = `room_${roomId}`;
-    socket.join(roomKey);
-
-    if (!socketUserMap.get(socket.id)) {
-      socketUserMap.set(socket.id, { roomId, userId });
-    }
-
-    // Ideally fetch from DB
-    const player = await db.query.roomPlayers.findFirst({
-      where: and(
-        eq(roomPlayers.userId, userId),
-        eq(roomPlayers.roomId, roomId),
-      ),
-    });
-
-    io.to(roomKey).emit("room_update", {
-      type: "player_refreshed",
-      player, // full player object
-    });
-  });
-
   socket.on("start_game", async ({ roomId }) => {
     console.log("start_game event", { roomId });
     if (!roomId) {
@@ -159,44 +152,6 @@ io.on("connection", (socket) => {
     const roomKey = `room_${roomId}`;
     io.to(roomKey).emit("room_update", {
       type: "game_started",
-    });
-  });
-
-  socket.on("send_message", async ({ roomId, sender, content, turnIndex }) => {
-    console.log(`send message from: ${sender} to ${roomId}, text = ${content}`);
-
-    if (!sender || !roomId || !content) {
-      console.error("send_message missing roomId, sender or content", {
-        roomId,
-        sender,
-        content,
-      });
-      return;
-    }
-
-    const roomKey = `room_${roomId}`;
-
-    const message = await db
-      .insert(messages)
-      .values({
-        roomId,
-        senderType: sender,
-        content,
-      })
-      .returning();
-
-    console.log(message);
-
-    let indexTurn;
-    if (sender != "ai") {
-      indexTurn = turnIndex + 1;
-      console.log(indexTurn);
-    }
-
-    io.to(roomKey).emit("room_update", {
-      type: "send_message",
-      message,
-      turnIndex: indexTurn,
     });
   });
 

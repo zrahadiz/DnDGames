@@ -15,9 +15,14 @@ export async function generateAiResponse({
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
     });
 
     const text = response.text ?? "";
+
+    console.log("Raw AI response:", text);
 
     // remove markdown json wrapper
     const cleaned = text

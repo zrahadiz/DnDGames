@@ -5,7 +5,7 @@ import { campaignClasses, campaignRaces, campaigns } from "@/db/schema";
 
 import { generateAiResponse } from "@/server/ai/config";
 
-import { promptCharacterSuggestions } from "@/server/ai/prompts/characters";
+import { promptCharacterSuggestions } from "@/server/ai/prompts/characterSuggestions";
 import { aiSuggestionSchema } from "@/server/validators/ai";
 
 import { Campaign } from "@/server/validators/campaigns";

@@ -13,6 +13,7 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
+import { GameEventPayload } from "@/types/gameEvents";
 
 /* =========================================================
    ENUMS
@@ -36,6 +37,13 @@ export const roomPlayerRoleEnum = pgEnum("room_player_role", [
   "host",
   "player",
   "spectator",
+]);
+
+export const actionTypeEnum = pgEnum("action_sender_type", [
+  "ai_narration",
+  "player_action",
+  "dice_roll",
+  "combat",
 ]);
 
 export const messageSenderTypeEnum = pgEnum("message_sender_type", [
@@ -303,6 +311,8 @@ export const rooms = pgTable("rooms", {
 
   currentProgression: text("current_progression"),
 
+  currentTurn: integer("current_turn").notNull().default(0),
+
   worldState: jsonb("world_state"),
 
   maxPlayers: integer("max_players").notNull().default(4),
@@ -424,21 +434,27 @@ export const roomPlayersRelation = relations(roomPlayers, ({ one }) => ({
    GAME EVENTS
    Structured gameplay events
 ========================================================= */
+export const gameEvents = pgTable(
+  "game_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
 
-export const gameEvents = pgTable("game_events", {
-  id: uuid("id").defaultRandom().primaryKey(),
+    roomId: uuid("room_id")
+      .notNull()
+      .references(() => rooms.id, {
+        onDelete: "cascade",
+      }),
 
-  roomId: uuid("room_id")
-    .notNull()
-    .references(() => rooms.id, {
+    roomPlayerId: uuid("room_player_id").references(() => roomPlayers.id, {
       onDelete: "cascade",
     }),
 
-  eventType: varchar("event_type", {
-    length: 50,
-  }).notNull(),
+    turnNumber: integer("turn_number").notNull(),
 
-  /*
+    eventType: actionTypeEnum("event_type").notNull(),
+
+    payload: jsonb("payload").$type<GameEventPayload>().notNull(),
+    /*
       Examples:
       {
         "dice": "d20",
@@ -450,17 +466,30 @@ export const gameEvents = pgTable("game_events", {
         "target": "Goblin",
         "damage": 12
       }
-    */
-  payload: jsonb("payload").notNull(),
+  */
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePlayerTurnAction: unique().on(
+      table.roomPlayerId,
+      table.turnNumber,
+      table.eventType,
+    ),
+  }),
+);
+
+export const gameEventRelations = relations(gameEvents, ({ one }) => ({
+  characters: one(characters, {
+    fields: [gameEvents.roomPlayerId],
+    references: [characters.roomPlayerId],
+  }),
+}));
 
 /* =========================================================
    MESSAGES
    Chat / AI narration / system messages
 ========================================================= */
-
 export const messages = pgTable("messages", {
   id: uuid("id").defaultRandom().primaryKey(),
 
@@ -480,3 +509,10 @@ export const messages = pgTable("messages", {
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const messageRelations = relations(messages, ({ one }) => ({
+  user: one(user, {
+    fields: [messages.senderId],
+    references: [user.id],
+  }),
+}));

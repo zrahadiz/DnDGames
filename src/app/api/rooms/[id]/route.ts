@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
     await requiredUser();
 
     const { id } = await params;
-    console.log("Fetching Room Players with ID:", id);
+    console.log("Fetching Room with ID:", id);
 
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, id),
@@ -42,15 +42,15 @@ export async function GET(req: Request, { params }: { params: Params }) {
     if (!room) {
       return apiResponse(404, {
         success: false,
-        message: "Room players not found",
+        message: "Room not found",
       });
     }
 
-    console.log("Fetched Room Players:", room);
+    console.log("Fetched Room :", room);
 
     return apiResponse(200, {
       success: true,
-      message: "Room players fetched successfully",
+      message: "Room fetched successfully",
       data: {
         id: room.id,
         name: room.name,

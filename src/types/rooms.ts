@@ -21,6 +21,39 @@ export type RoomDetail = BaseRoom & {
   })[];
 };
 
+export type RoomContext = {
+  id: string;
+  name: string;
+  status: "waiting" | "playing" | "finished";
+  hostId: string;
+  currentTurn: number;
+
+  campaign: Pick<
+    Campaign,
+    | "title"
+    | "description"
+    | "backgroundLore"
+    | "startingLocation"
+    | "startingObjective"
+    | "worldSetup"
+  >;
+
+  players: Array<
+    Pick<RoomPlayer, "userId" | "role"> & {
+      character: Pick<
+        Characters,
+        | "name"
+        | "race"
+        | "characterClass"
+        | "level"
+        | "hp"
+        | "mana"
+        | "backstory"
+      > | null;
+    }
+  >;
+};
+
 // export type CampaignForm = {
 //   title: string;
 //   description: string;

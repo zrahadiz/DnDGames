@@ -10,7 +10,6 @@ import { rooms, characters } from "@/db/schema";
 export const roomResponseSchema = createSelectSchema(rooms).omit({
   createdAt: true,
   updatedAt: true,
-  hostId: true,
 });
 
 export const createRoomSchema = createInsertSchema(rooms).omit({

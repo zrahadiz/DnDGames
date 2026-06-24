@@ -1,6 +1,7 @@
 // /pages/api/rooms/[id]/start.ts
 import { db } from "@/db";
-import { roomPlayers, rooms } from "@/db/schema";
+import { gameEvents, messages, roomPlayers, rooms } from "@/db/schema";
+import { generateOpeningNarrative } from "@/server/ai/service/generateOpeningNarrative";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { apiResponse } from "@/server/utils/apiResponse";
@@ -18,6 +19,32 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     // Check if room exists
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
+      columns: {
+        id: true,
+        name: true,
+        status: true,
+        hostId: true,
+        currentTurn: true,
+      },
+
+      with: {
+        campaign: {
+          columns: {
+            title: true,
+            description: true,
+            backgroundLore: true,
+            startingLocation: true,
+            startingObjective: true,
+            worldSetup: true,
+          },
+        },
+
+        players: {
+          with: {
+            character: true,
+          },
+        },
+      },
     });
 
     if (!room) {
@@ -30,7 +57,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     if (room.status !== "waiting") {
       return apiResponse(400, {
         success: false,
-        message: "Room is not in waiting state",
+        message: "Room has already started",
       });
     }
 
@@ -38,6 +65,15 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
       return apiResponse(403, {
         success: false,
         message: "Only the host can start the game",
+      });
+    }
+
+    const missingCharacter = room.players.some((player) => !player.character);
+
+    if (missingCharacter) {
+      return apiResponse(400, {
+        success: false,
+        message: "All players must create a character before starting",
       });
     }
 
@@ -54,18 +90,42 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
       });
     }
 
-    const [updatedRoom] = await db
-      .update(rooms)
-      .set({
-        status: "playing",
-      })
-      .where(eq(rooms.id, roomId))
-      .returning();
+    const aiResults = await generateOpeningNarrative(room);
+    console.log("AI results for opening narrative:", aiResults);
+
+    const data = await db.transaction(async (tx) => {
+      const [updatedRoom] = await tx
+        .update(rooms)
+        .set({
+          status: "playing",
+          currentTurn: 1,
+        })
+        .where(eq(rooms.id, roomId))
+        .returning();
+
+      const [narration] = await tx
+        .insert(gameEvents)
+        .values({
+          roomId,
+          roomPlayerId: null,
+          turnNumber: 0,
+          eventType: "ai_narration",
+          payload: {
+            text: aiResults.narrative,
+          },
+        })
+        .returning();
+
+      return {
+        room: updatedRoom,
+        openingNarrative: narration,
+      };
+    });
 
     return apiResponse(200, {
       success: true,
       message: "Room started successfully",
-      data: updatedRoom,
+      data,
     });
   } catch (error) {
     console.error(error);
