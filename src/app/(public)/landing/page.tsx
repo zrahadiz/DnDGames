@@ -239,22 +239,24 @@ export default function LandingPage() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col mb-10 sm:flex-row items-center gap-4">
-            <button
-              onClick={loginHandle}
-              disabled={isPending}
-              className="px-8 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
-              style={{
-                fontFamily: "'Cinzel', serif",
-                background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
-                border: "1px solid rgba(200,169,110,0.5)",
-                color: "#e8d5a3",
-                letterSpacing: "0.08em",
-                boxShadow:
-                  "0 0 30px rgba(200,169,110,0.15), inset 0 1px 0 rgba(200,169,110,0.2)",
-              }}
-            >
-              {isPending ? "Loading..." : "⚔ Begin Your Adventure"}
-            </button>
+            {!user && (
+              <button
+                onClick={loginHandle}
+                disabled={isPending}
+                className="px-8 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
+                style={{
+                  fontFamily: "'Cinzel', serif",
+                  background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
+                  border: "1px solid rgba(200,169,110,0.5)",
+                  color: "#e8d5a3",
+                  letterSpacing: "0.08em",
+                  boxShadow:
+                    "0 0 30px rgba(200,169,110,0.15), inset 0 1px 0 rgba(200,169,110,0.2)",
+                }}
+              >
+                {isPending ? "Loading..." : "⚔ Begin Your Adventure"}
+              </button>
+            )}
             <a href="#how-to-play">
               <button
                 className="px-8 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-400/40"
@@ -266,7 +268,7 @@ export default function LandingPage() {
                   letterSpacing: "0.08em",
                 }}
               >
-                ✦ Watch How It Works
+                ✦ See How It Works
               </button>
             </a>
           </div>
@@ -714,38 +716,40 @@ export default function LandingPage() {
             </p>
             <OrnamentalDivider className="max-w-xs mx-auto mb-10" />
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={loginHandle}
-                disabled={isPending}
-                className="px-10 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
-                  border: "1px solid rgba(200,169,110,0.5)",
-                  color: "#e8d5a3",
-                  letterSpacing: "0.1em",
-                  boxShadow:
-                    "0 0 40px rgba(200,169,110,0.15), inset 0 1px 0 rgba(200,169,110,0.2)",
-                }}
-              >
-                {isPending ? "Loading..." : "⚔ Enter the Realm"}
-              </button>
-              <button
-                onClick={loginHandle}
-                disabled={isPending}
-                className="px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5"
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  background: "transparent",
-                  border: "1px solid rgba(167,139,250,0.3)",
-                  color: "#9a85c4",
-                  letterSpacing: "0.1em",
-                }}
-              >
-                {isPending ? "Loading..." : "✦ Wander as a Stranger"}
-              </button>
-            </div>
+            {!user && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={loginHandle}
+                  disabled={isPending}
+                  className="px-10 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
+                  style={{
+                    fontFamily: "'Cinzel', serif",
+                    background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
+                    border: "1px solid rgba(200,169,110,0.5)",
+                    color: "#e8d5a3",
+                    letterSpacing: "0.1em",
+                    boxShadow:
+                      "0 0 40px rgba(200,169,110,0.15), inset 0 1px 0 rgba(200,169,110,0.2)",
+                  }}
+                >
+                  {isPending ? "Loading..." : "⚔ Enter the Realm"}
+                </button>
+                <button
+                  onClick={loginHandle}
+                  disabled={isPending}
+                  className="px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    fontFamily: "'Cinzel', serif",
+                    background: "transparent",
+                    border: "1px solid rgba(167,139,250,0.3)",
+                    color: "#9a85c4",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  {isPending ? "Loading..." : "✦ Wander as a Stranger"}
+                </button>
+              </div>
+            )}
           </div>
         </section>
       </main>

@@ -10,11 +10,11 @@ export default function ProtectedLayout({
   return (
     <div>
       <PageBg />
-      <Header />
+      {/* <Header /> */}
 
       <main>{children}</main>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }
