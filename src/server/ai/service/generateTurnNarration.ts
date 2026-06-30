@@ -13,54 +13,45 @@ export async function generateTurnNarration({
   actions: TurnActionContext[];
 }) {
   const gameContext = await roomContext(room);
-  const actionSummary = actions
-    .map((action) => {
-      const text =
-        typeof action.payload === "object" &&
-        action.payload &&
-        "text" in action.payload
-          ? action.payload.text
-          : "";
-
-      return `
-${action.character?.name ?? "Unknown"}:
-${text}
-`;
-    })
-    .join("\n");
 
   const prompt = `
-You are the Dungeon Master.
+    You are the Dungeon Master of a tabletop RPG.
 
-Current Campaign Context:
-${gameContext}
+    Current Campaign Context:
+    ${gameContext}
 
-Current Turn: ${room.currentTurn}
+    Current Turn:
+    ${room.currentTurn}
 
-Player Actions:
-${actionSummary}
+    Player Actions:
+    ${JSON.stringify(actions, null, 2)}
 
-Instructions:
-- Narrate the consequences of the player actions.
-- Describe the world, NPC reactions, discoveries, and outcomes.
-- Mention player characters naturally.
-- Do NOT decide future player actions.
-- Do NOT speak as a player.
-- End by presenting the next situation and waiting for player responses.
+    Instructions:                               
+    - Resolve all player actions.
+    - Resolve combat actions using the supplied dice roll.
+    - Higher dice rolls should generally result in better outcomes.
+    - Critical successes and failures are allowed.
+    - Determine combat results, damage, injuries, discoveries, and consequences.
+    - Narrate naturally and cinematically.
+    - Mention character names.
+    - Describe NPC reactions.
+    - Continue the story.
+    - Do NOT decide future player actions.
+    - Do NOT speak as a player.
+    - End by presenting the next situation and waiting for player responses.
 
-Return ONLY valid JSON.
-  Do not use markdown.
-  Do not use \`\`\`json.
+    Return ONLY valid JSON.
 
-  Format:
-  {
-    "narrative": "Your generated opening narrative goes here."
-  }   
-`;
+    {
+      "narrative": "generated narrative here"
+    }
+    `;
+
+  console.log("turn Prompt: ", prompt);
 
   const response = await generateAiResponse({
     prompt,
   });
 
-  return response;
+  return response.narrative;
 }

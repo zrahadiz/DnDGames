@@ -1,11 +1,10 @@
 import { db } from "@/db";
-import { gameEvents, messages, roomPlayers, rooms } from "@/db/schema";
+import { gameEvents, rooms } from "@/db/schema";
 import { generateTurnNarration } from "@/server/ai/service/generateTurnNarration";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { apiResponse } from "@/server/utils/apiResponse";
-import { eq, and } from "drizzle-orm";
-import { id } from "zod/v4/locales";
+import { eq, ne, and } from "drizzle-orm";
 
 type Params = Promise<{ id: string }>;
 
@@ -75,7 +74,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       where: and(
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
-        eq(gameEvents.eventType, "player_action"),
+        ne(gameEvents.eventType, "ai_narration"),
       ),
     });
 
@@ -92,15 +91,14 @@ export async function POST(req: Request, { params }: { params: Params }) {
       return {
         character: player?.character
           ? {
-              id: player.character.id,
               name: player.character.name,
               race: player.character.race,
               characterClass: player.character.characterClass,
               level: player.character.level,
-              hp: player.character.hp,
               mana: player.character.mana,
             }
           : null,
+        eventType: action.eventType,
         payload: action.payload,
       };
     });
@@ -110,6 +108,8 @@ export async function POST(req: Request, { params }: { params: Params }) {
       actions: actionsForAi,
     });
 
+    console.log("narr: ", narration);
+
     const data = await db.transaction(async (tx) => {
       const [aiEvent] = await tx
         .insert(gameEvents)
@@ -118,7 +118,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
           turnNumber: room.currentTurn,
           eventType: "ai_narration",
           payload: {
-            text: narration.narrative,
+            text: narration,
           },
         })
         .returning();

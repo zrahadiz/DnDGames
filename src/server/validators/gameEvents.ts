@@ -25,13 +25,19 @@ export const updateGameEventSchema = createUpdateSchema(gameEvents).omit({
   createdAt: true,
 });
 
-export const submitActionSchema = z.object({
-  action: z
-    .string()
-    .trim()
-    .min(1, "Action cannot be empty")
-    .max(1000, "Action is too long"),
-});
+export const submitActionSchema = z.discriminatedUnion("eventType", [
+  z.object({
+    eventType: z.literal("player_action"),
+    action: z.string().min(1),
+  }),
+
+  z.object({
+    eventType: z.literal("combat"),
+    target: z.string(),
+    how: z.string(),
+    diceRoll: z.int(),
+  }),
+]);
 
 export type SubmitActionInput = z.infer<typeof submitActionSchema>;
 

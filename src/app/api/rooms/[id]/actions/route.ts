@@ -6,6 +6,7 @@ import { requiredUser } from "@/server/auth/requiredUser";
 import { apiResponse } from "@/server/utils/apiResponse";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { submitActionSchema } from "@/server/validators/gameEvents";
+import { GameEventPayload } from "@/types/gameEvents";
 
 type Params = Promise<{ id: string }>;
 
@@ -139,7 +140,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.roomPlayerId, membership.id),
         eq(gameEvents.turnNumber, room.currentTurn),
-        eq(gameEvents.eventType, "player_action"),
+        ne(gameEvents.eventType, "ai_narration"),
       ),
     });
 
@@ -150,16 +151,33 @@ export async function POST(req: Request, { params }: { params: Params }) {
       });
     }
 
+    let eventType: "player_action" | "combat";
+    let payload: GameEventPayload;
+
+    if (parsed.data.eventType === "player_action") {
+      eventType = "player_action";
+
+      payload = {
+        text: parsed.data.action,
+      };
+    } else {
+      eventType = "combat";
+
+      payload = {
+        target: parsed.data.target,
+        how: parsed.data.how,
+        diceRoll: parsed.data.diceRoll,
+      };
+    }
+
     const [actionEvent] = await db
       .insert(gameEvents)
       .values({
         roomId,
         roomPlayerId: membership.id,
         turnNumber: room.currentTurn,
-        eventType: "player_action",
-        payload: {
-          text: parsed.data.action,
-        },
+        eventType,
+        payload,
       })
       .returning();
 
@@ -167,7 +185,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       where: and(
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
-        eq(gameEvents.eventType, "player_action"),
+        ne(gameEvents.eventType, "ai_narration"),
       ),
     });
 
@@ -187,7 +205,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       data: {
         event: {
           ...actionEvent,
-          character: {
+          characters: {
             id: character.id,
             name: character.name,
             race: character.race,

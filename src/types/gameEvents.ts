@@ -6,31 +6,30 @@ export type GameEventPayload =
       text: string;
     } // player_action
   | {
-      dice: "d20" | "d6" | "d8";
-      result: number;
-    } // dice_roll
-  | {
-      attacker: string;
       target: string;
-      damage: number;
+      how: string;
+      diceRoll: number;
     }; // combat
 
 export type TurnActionContext = {
   character: {
-    id: string;
     name: string;
     race: string | null;
     characterClass: string | null;
     level: number;
-    hp: number;
     mana: number;
   } | null;
-
+  eventType: string;
   payload: GameEventPayload;
 };
 
+export type CreateCombatInput = {
+  target: string;
+  how: string;
+};
+
 export type GameEventWithRelations = BaseGameEvent & {
-  character: Pick<
+  characters: Pick<
     Characters,
     "id" | "name" | "race" | "characterClass" | "level" | "hp" | "mana"
   > | null;

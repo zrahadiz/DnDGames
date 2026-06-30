@@ -155,6 +155,15 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on(
+    "generate_ai_response",
+    ({ roomId, started }: { roomId: string; started: boolean }) => {
+      io.to(`room_${roomId}`).emit("generate_ai_response", {
+        started,
+      });
+    },
+  );
+
   socket.on("disconnect", async () => {
     try {
       const info = socketUserMap.get(socket.id);

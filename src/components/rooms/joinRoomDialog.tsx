@@ -19,7 +19,6 @@ import {
   ClassSuggestion,
   CharacterSuggestions,
 } from "@/types/characters";
-import api from "@/lib/axios";
 
 interface JoinRoomDialogProps {
   open: boolean;
