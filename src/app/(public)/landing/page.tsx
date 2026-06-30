@@ -8,9 +8,10 @@ import Embers from "@/components/ornaments/embers";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import GoldBar from "@/components/ornaments/goldBar";
 import { BookOpen, BrainCircuit, Castle, Swords } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/stores/auth-store";
+import { toast } from "@/lib/toast";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS — share these across every page
@@ -135,6 +136,24 @@ export default function LandingPage() {
   const [isPending, setIsPending] = useState(false);
   const { user, fetchUser } = useAuthStore();
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (searchParams.get("reason") == "already-authenticated") {
+      toast("You're already signed in. Welcome back!", {
+        type: "info",
+      });
+    }
+  }, [mounted, searchParams]);
 
   const loginHandle = async () => {
     setIsPending(true);

@@ -1,23 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { createAuthClient } from "better-auth/client";
 import { ShieldAlert, Pickaxe } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Loading from "@/components/feedback/loading";
 import CornerRune from "@/components/ornaments/cornerRune";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import Embers from "@/components/ornaments/embers";
 import GoogleIcon from "@/components/icons/googleIcon";
-import PageBackground from "@/components/layout/pageBackground";
 import D20Icon from "@/components/icons/d20Icon";
+import { toast } from "@/lib/toast";
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function LoginPage() {
   const authClient = createAuthClient();
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    if (searchParams.get("reason") === "unauthorized") {
+      toast("The gatekeeper requests your credentials. Please sign in.", {
+        type: "error",
+      });
+    }
+  }, [mounted, searchParams]);
 
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
@@ -57,33 +75,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#0a0806]">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <Loading status={loadingState} fullscreen text={loadingText} />
-
-      {/* ── Parchment / atmospheric background ── */}
-      <PageBackground />
-
-      {/* ── Grid / map texture ── */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `
-            linear-gradient(#c8a96e 1px, transparent 1px),
-            linear-gradient(90deg, #c8a96e 1px, transparent 1px)
-          `,
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      {/* ── Vignette ── */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.75) 100%)",
-        }}
-      />
-
       {/* ── Floating embers ── */}
       <Embers />
 
