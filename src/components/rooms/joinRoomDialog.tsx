@@ -13,21 +13,22 @@ import { Button } from "@/components/ui/button";
 import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import { CreateCharacterInput } from "@/server/validators/rooms";
 import {
   RaceSuggestion,
   ClassSuggestion,
   CharacterSuggestions,
 } from "@/types/characters";
+import { JoinRoomInput } from "@/server/validators/roomPlayers";
 
 interface JoinRoomDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  joinRoomInput: CreateCharacterInput;
-  handleJoinRoomInput: (key: keyof CreateCharacterInput, value: string) => void;
+  joinRoomInput: JoinRoomInput;
+  setJoinRoomInput: React.Dispatch<React.SetStateAction<JoinRoomInput>>;
   onJoin: () => void;
   suggestions: CharacterSuggestions | null;
   onRetrySuggestions: () => void;
+  needCode: boolean;
 }
 
 // ─── Option card inside dropdown ──────────────────────────────────────────────
@@ -146,11 +147,26 @@ export default function JoinRoomDialog({
   open,
   onOpenChange,
   joinRoomInput,
-  handleJoinRoomInput,
+  setJoinRoomInput,
   onJoin,
+  needCode,
   suggestions,
   onRetrySuggestions,
 }: JoinRoomDialogProps) {
+  const setCharacterField = (
+    key: keyof JoinRoomInput["character"],
+    value: string,
+  ) => {
+    setJoinRoomInput((prev) => ({
+      ...prev,
+      character: {
+        ...prev.character,
+        [key]: value,
+      },
+    }));
+  };
+
+  console.log("code: ", needCode);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 border-0 bg-transparent shadow-none w-full max-w-lg max-h-[90vh]">
@@ -189,12 +205,11 @@ export default function JoinRoomDialog({
                   id="name"
                   type="text"
                   placeholder="What shall the bards call you?"
-                  value={joinRoomInput.name}
-                  onChange={(e) => handleJoinRoomInput("name", e.target.value)}
+                  value={joinRoomInput.character.name}
+                  onChange={(e) => setCharacterField("name", e.target.value)}
                   className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif italic text-sm"
                 />
               </div>
-
               {/* Race selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -210,18 +225,17 @@ export default function JoinRoomDialog({
                     </Button>
                   ) : (
                     <span className="text-[11px] font-cinzel tracking-wide text-[#c8a96e]">
-                      ✦ {joinRoomInput.race}
+                      ✦ {joinRoomInput.character.race}
                     </span>
                   )}
                 </div>
                 <OptionList
                   items={suggestions?.races ?? []}
-                  selected={joinRoomInput.race ?? ""}
-                  onSelect={(value) => handleJoinRoomInput("race", value)}
+                  selected={joinRoomInput.character.race ?? ""}
+                  onSelect={(value) => setCharacterField("race", value)}
                   emptyText="No race suggestions available."
                 />
               </div>
-
               {/* Divider between race and class */}
               <div
                 className="h-px w-full"
@@ -230,27 +244,44 @@ export default function JoinRoomDialog({
                     "linear-gradient(90deg,transparent,rgba(200,169,110,0.12),transparent)",
                 }}
               />
-
               {/* Class selection */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <CustomFieldLabel>Class / Calling</CustomFieldLabel>
-                  {joinRoomInput.characterClass && (
+                  {joinRoomInput.character.characterClass && (
                     <span className="text-[11px] font-cinzel tracking-wide text-[#c4b5fd]">
-                      ✦ {joinRoomInput.characterClass}
+                      ✦ {joinRoomInput.character.characterClass}
                     </span>
                   )}
                 </div>
 
                 <OptionList
                   items={suggestions?.classes ?? []}
-                  selected={joinRoomInput.characterClass ?? ""}
+                  selected={joinRoomInput.character.characterClass ?? ""}
                   onSelect={(value) =>
-                    handleJoinRoomInput("characterClass", value)
+                    setCharacterField("characterClass", value)
                   }
                   emptyText="No class suggestions available."
                 />
               </div>
+              {needCode && (
+                <div>
+                  <CustomFieldLabel>Room Code</CustomFieldLabel>
+                  <Input
+                    id="code"
+                    type="text"
+                    placeholder="Enter the room code"
+                    value={joinRoomInput.code}
+                    onChange={(e) =>
+                      setJoinRoomInput((prev) => ({
+                        ...prev,
+                        code: e.target.value,
+                      }))
+                    }
+                    className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif italic text-sm"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -260,19 +291,21 @@ export default function JoinRoomDialog({
             style={{ borderTop: "1px solid rgba(200,169,110,0.1)" }}
           >
             {/* Selection summary */}
-            {(joinRoomInput.race || joinRoomInput.characterClass) && (
+            {(joinRoomInput.character.race ||
+              joinRoomInput.character.characterClass) && (
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                {joinRoomInput.race && (
+                {joinRoomInput.character.race && (
                   <span className="rounded-full border border-[rgba(200,169,110,0.2)] bg-[rgba(200,169,110,0.07)] px-2.5 py-1 text-[11px] font-cinzel tracking-wide text-[#8a6f3e]">
-                    {joinRoomInput.race}
+                    {joinRoomInput.character.race}
                   </span>
                 )}
-                {joinRoomInput.race && joinRoomInput.characterClass && (
-                  <span className="text-[#3a2a14] text-xs">·</span>
-                )}
-                {joinRoomInput.characterClass && (
+                {joinRoomInput.character.race &&
+                  joinRoomInput.character.characterClass && (
+                    <span className="text-[#3a2a14] text-xs">·</span>
+                  )}
+                {joinRoomInput.character.characterClass && (
                   <span className="rounded-full border border-[rgba(167,139,250,0.2)] bg-[rgba(124,58,237,0.07)] px-2.5 py-1 text-[11px] font-cinzel tracking-wide text-[#9a85c4]">
-                    {joinRoomInput.characterClass}
+                    {joinRoomInput.character.characterClass}
                   </span>
                 )}
               </div>
@@ -291,9 +324,9 @@ export default function JoinRoomDialog({
                 type="button"
                 onClick={onJoin}
                 disabled={
-                  !joinRoomInput.name ||
-                  !joinRoomInput.race ||
-                  !joinRoomInput.characterClass
+                  !joinRoomInput.character.name ||
+                  !joinRoomInput.character.race ||
+                  !joinRoomInput.character.characterClass
                 }
                 className="flex-1 rounded-xl border border-[rgba(200,169,110,0.45)] font-cinzel text-sm tracking-wider text-[#e8d5a3] transition-all duration-200 hover:-translate-y-0.5 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
                 style={{

@@ -66,6 +66,11 @@ export async function GET(req: NextRequest) {
     orderBy: (rooms, { desc }) => [desc(rooms.createdAt)],
   });
 
+  const roomsHasCode = data.map(({ roomCode, ...room }) => ({
+    ...room,
+    hasCode: Boolean(roomCode),
+  }));
+
   const totalResult = await db
     .select({
       count: count(),
@@ -78,7 +83,7 @@ export async function GET(req: NextRequest) {
   return apiResponse(200, {
     success: true,
     message: "Rooms fetched successfully",
-    data,
+    data: roomsHasCode,
     pagination: {
       page,
       limit,

@@ -6,9 +6,6 @@ export const getErrorMessage = (error: unknown): string => {
       case 401:
         return "Unauthorized. Please sign in first.";
 
-      case 403:
-        return "You don't have permission to perform this action.";
-
       case 404:
         return "The requested resource could not be found.";
 

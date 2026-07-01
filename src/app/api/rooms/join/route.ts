@@ -32,6 +32,8 @@ export async function POST(req: Request) {
 
       if (!room) throw new Error("ROOM_NOT_FOUND");
 
+      if (room.roomCode !== body.code) throw new Error("INVALID_ROOM_CODE");
+
       const existingPlayer = await tx.query.roomPlayers.findFirst({
         where: and(
           eq(roomPlayers.roomId, result.data.roomId),
@@ -123,6 +125,12 @@ export async function POST(req: Request) {
           return apiResponse(400, {
             success: false,
             message: "Room is full",
+          });
+
+        case "INVALID_ROOM_CODE":
+          return apiResponse(403, {
+            success: false,
+            message: "Invalid room code",
           });
       }
     }

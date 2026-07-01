@@ -6,6 +6,7 @@ import { RoomPlayer } from "@/server/validators/roomPlayers";
 import { Characters } from "@/server/validators/character";
 
 export type RoomWithRelations = BaseRoom & {
+  hasCode: boolean;
   campaign: Pick<Campaign, "id" | "title" | "description"> & {
     theme: Pick<Theme, "id" | "name" | "icon">;
   };

@@ -27,7 +27,7 @@ import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { Search, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
-import { CreateCharacterInput } from "@/server/validators/rooms";
+import { JoinRoomInput } from "@/server/validators/roomPlayers";
 
 const STATUS_CONFIG = {
   waiting: {
@@ -113,41 +113,46 @@ export default function Home() {
   );
 
   const [joinRoomDialog, setJoinRoomDialog] = useState(false);
-  const [roomId, setRoomId] = useState("");
-  const [characterForm, setCharacterForm] = useState<CreateCharacterInput>({
-    name: "",
-    race: "",
-    characterClass: "",
+  const [needCode, setNeedCode] = useState(false);
+  const [roomCampaignId, setRoomCampaignId] = useState<string>("");
+  const [joinRoomForm, setJoinRoomForm] = useState<JoinRoomInput>({
+    roomId: "",
+    code: "",
+    character: {
+      name: "",
+      race: "",
+      characterClass: "",
+      backstory: "",
+    },
   });
 
-  const handleJoinRoomInput = (
-    key: keyof CreateCharacterInput,
-    value: string,
+  const openJoinDialog = async (
+    roomId: string,
+    campaignId: string,
+    roomCode: boolean,
   ) => {
-    setCharacterForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const openJoinDialog = async (room_id: string, campaign_id: string) => {
-    console.log(
-      "Opening join dialog for room:",
-      room_id,
-      "campaign:",
-      campaign_id,
-    );
+    console.log("openJoinDialog called with:", {
+      roomId,
+      campaignId,
+      roomCode,
+    });
     setLoadingState(true);
     setLoadingText("Fetching character suggestions...");
+
     try {
-      const { data } = await api.get(`/master-character/${campaign_id}`);
-      console.log("Character suggestions:", data);
+      const { data } = await api.get(`/master-character/${campaignId}`);
+
       setSuggestions(data.data);
-      setRoomId(room_id);
+
+      setJoinRoomForm((prev) => ({
+        ...prev,
+        roomId,
+      }));
+
       setJoinRoomDialog(true);
+      setNeedCode(roomCode);
+      setRoomCampaignId(campaignId);
     } catch (error) {
-      console.log("Catch:", error);
-      console.error("Error fetching character suggestions:", error);
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -179,23 +184,20 @@ export default function Home() {
     setLoadingState(true);
     setLoadingText("Joining room...");
     try {
-      const payload = {
-        roomId: roomId,
-        character: characterForm,
-      };
-      const { data } = await api.post("/rooms/join", payload);
+      const { data } = await api.post("/rooms/join", joinRoomForm);
+
       if (data.success) {
         socket.emit("join_room", {
-          roomId,
+          roomId: joinRoomForm.roomId,
         });
+
         socket.emit("sync_room_state", {
-          roomId,
+          roomId: joinRoomForm.roomId,
         });
+
+        router.push(`/waiting-room/${joinRoomForm.roomId}`);
       }
-      console.log("Joined Room: ", data.data);
-      router.push("/waiting-room/" + payload.roomId);
     } catch (error) {
-      console.error("Error creating room:", error);
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -405,7 +407,9 @@ export default function Home() {
                       {/* Join button */}
                       <Button
                         variant="outline"
-                        onClick={() => openJoinDialog(room.id, room.campaignId)}
+                        onClick={() =>
+                          openJoinDialog(room.id, room.campaignId, room.hasCode)
+                        }
                         disabled={room.status === "finished"}
                         className="w-full rounded-xl border-[rgba(200,169,110,0.25)] bg-[rgba(200,169,110,0.06)] font-cinzel text-xs tracking-wider text-[#d4b87a] hover:border-[rgba(200,169,110,0.5)] hover:bg-[rgba(200,169,110,0.12)] hover:text-[#e8d5a3] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[rgba(200,169,110,0.06)] disabled:hover:border-[rgba(200,169,110,0.25)]"
                       >
@@ -414,17 +418,6 @@ export default function Home() {
                           : "⚔ Join Room"}
                       </Button>
                     </div>
-                    <JoinRoomDialog
-                      open={joinRoomDialog}
-                      onOpenChange={setJoinRoomDialog}
-                      joinRoomInput={characterForm}
-                      handleJoinRoomInput={handleJoinRoomInput}
-                      onJoin={joinRoom}
-                      suggestions={suggestions}
-                      onRetrySuggestions={() =>
-                        handleRetrySuggestions(room.campaignId)
-                      }
-                    />
                   </div>
                 );
               })}
@@ -522,6 +515,16 @@ export default function Home() {
         </div>
       </div>
 
+      <JoinRoomDialog
+        open={joinRoomDialog}
+        onOpenChange={setJoinRoomDialog}
+        joinRoomInput={joinRoomForm}
+        setJoinRoomInput={setJoinRoomForm}
+        onJoin={joinRoom}
+        needCode={needCode}
+        suggestions={suggestions}
+        onRetrySuggestions={() => handleRetrySuggestions(roomCampaignId)}
+      />
       <CampaignPickerDialog
         open={campaignDialogOpen}
         selectedCampaignId={selectedCampaign?.id || null}
