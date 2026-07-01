@@ -146,6 +146,7 @@ export default function Home() {
       setRoomId(room_id);
       setJoinRoomDialog(true);
     } catch (error) {
+      console.log("Catch:", error);
       console.error("Error fetching character suggestions:", error);
       toast(getErrorMessage(error), {
         type: "error",

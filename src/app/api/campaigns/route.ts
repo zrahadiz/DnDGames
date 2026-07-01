@@ -6,6 +6,7 @@ import { requiredUser } from "@/server/auth/requiredUser";
 import { createCampaignSchema } from "@/server/validators/campaigns";
 import { apiResponse } from "@/server/utils/apiResponse";
 import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
+import { UnauthorizedError } from "@/server/errors/unauthorized";
 
 export async function GET(req: NextRequest) {
   try {
@@ -146,9 +147,16 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error(error);
+    if (error instanceof UnauthorizedError) {
+      return apiResponse(401, {
+        success: false,
+        message: error?.message || "Unauthorized",
+        error,
+      });
+    }
     return apiResponse(500, {
       success: false,
-      message: "Failed to create campaign",
+      message: "Internal Server Error",
       error,
     });
   }

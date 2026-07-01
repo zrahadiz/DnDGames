@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +21,31 @@ import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { CharacterSuggestions } from "@/types/characters";
 
+import { useSearchParams } from "next/navigation";
+
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId");
+  useEffect(() => {
+    if (!campaignId) return;
+
+    const loadCampaign = async () => {
+      try {
+        const { data } = await api.get(`/campaigns/${campaignId}`);
+
+        setSelectedCampaign(data.data);
+        setRoomField("campaignId", data.data.id);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadCampaign();
+  }, [campaignId]);
 
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] =

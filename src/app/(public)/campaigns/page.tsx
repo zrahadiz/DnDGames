@@ -15,6 +15,8 @@ import Loading from "@/components/feedback/loading";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
 
+import { useRouter } from "next/navigation";
+
 import {
   Pagination,
   PaginationContent,
@@ -25,6 +27,7 @@ import {
 } from "@/components/ui/pagination";
 
 export default function CampaignsPage() {
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignWithRelations[]>([]);
   const { user, fetchUser } = useAuthStore();
   const [loadingState, setLoadingState] = useState(false);
@@ -249,7 +252,7 @@ export default function CampaignsPage() {
                     isOwner={c.createdBy === user?.id}
                     onEdit={setEditTarget}
                     onDelete={setDeleteTarget}
-                    onPlay={(c) => console.log("play", c.id)}
+                    onPlay={(c) => router.push(`/rooms/create?campaignId=${c.id}`)}
                   />
                 ))}
               </div>
