@@ -6,10 +6,7 @@ import { Input } from "@/components/ui/input";
 
 import Loading from "@/components/feedback/loading";
 
-import {
-  CreateCharacterInput,
-  CreateRoomInput,
-} from "@/server/validators/rooms";
+import { CreateRoomInput } from "@/server/validators/rooms";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
@@ -20,43 +17,54 @@ import { getErrorMessage } from "@/lib/errors";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { CharacterSuggestions } from "@/types/characters";
+import { JoinRoomInput } from "@/server/validators/roomPlayers";
 
 import { useSearchParams } from "next/navigation";
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
-  const router = useRouter();
-
-  const searchParams = useSearchParams();
-  const campaignId = searchParams.get("campaignId");
-  useEffect(() => {
-    if (!campaignId) return;
-
-    const loadCampaign = async () => {
-      try {
-        const { data } = await api.get(`/campaigns/${campaignId}`);
-
-        setSelectedCampaign(data.data);
-        setRoomField("campaignId", data.data.id);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    loadCampaign();
-  }, [campaignId]);
-
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
+  const [joinRoomDialog, setJoinRoomDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] =
     useState<CampaignWithRelations | null>(null);
+  const [suggestions, setSuggestions] = useState<CharacterSuggestions | null>(
+    null,
+  );
+
+  const [roomForm, setRoomForm] = useState<CreateRoomInput>({
+    campaignId: "",
+    name: "",
+    roomCode: "",
+    maxPlayers: 4,
+  });
+
+  const [joinRoomForm, setJoinRoomForm] = useState<JoinRoomInput>({
+    roomId: "",
+    character: {
+      name: "",
+      race: "",
+      characterClass: "",
+      backstory: "",
+    },
+  });
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const campaignId = searchParams.get("campaignId");
+
+  const setRoomField = <K extends keyof CreateRoomInput>(
+    key: K,
+    value: CreateRoomInput[K],
+  ) => {
+    setRoomForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleCampaignSelect = (campaign: CampaignWithRelations) => {
     setSelectedCampaign(campaign);
     setRoomField("campaignId", campaign.id);
   };
-
-  const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
 
   const saveCampaign = async ({
     form,
@@ -111,61 +119,35 @@ export default function CreateRoom() {
     }
   };
 
-  const [roomForm, setRoomForm] = useState<CreateRoomInput>({
-    campaignId: "",
-    name: "",
-    roomCode: "",
-    maxPlayers: 4,
-  });
-
-  const [characterForm, setCharacterForm] = useState<CreateCharacterInput>({
-    name: "",
-    race: "",
-    characterClass: "",
-  });
-
-  const setRoomField = <K extends keyof CreateRoomInput>(
-    key: K,
-    value: CreateRoomInput[K],
-  ) => {
-    setRoomForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const setCharacterField = <K extends keyof CreateCharacterInput>(
-    key: K,
-    value: CreateCharacterInput[K],
-  ) => {
-    setCharacterForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const [suggestions, setSuggestions] = useState<CharacterSuggestions | null>(
-    null,
-  );
-  const [joinRoomDialog, setJoinRoomDialog] = useState(false);
   const openJoinDialog = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!roomForm.campaignId) {
       toast("Please select a campaign first", {
         type: "warning",
       });
       return;
     }
-    console.log(
-      "Opening join dialog for room:",
-      "campaign:",
-      roomForm.campaignId,
-    );
+
     setLoadingState(true);
     setLoadingText("Fetching character suggestions...");
+
     try {
       const { data } = await api.get(
         `/master-character/${roomForm.campaignId}`,
       );
-      console.log("Character suggestions:", data);
+
       setSuggestions(data.data);
+
+      setJoinRoomForm((prev) => ({
+        ...prev,
+        roomId: "",
+      }));
+
       setJoinRoomDialog(true);
     } catch (error) {
       console.error("Error fetching character suggestions:", error);
+
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -195,21 +177,25 @@ export default function CreateRoom() {
   const handleCreateRoom = async () => {
     setLoadingState(true);
     setLoadingText("Creating Room...");
+
     try {
       const payload = {
         room: roomForm,
-        character: characterForm,
+        character: joinRoomForm.character,
       };
+
       const { data } = await api.post("/rooms", payload);
-      console.log("Room created:", data);
-      toast("Room Created successfully", {
+
+      toast("Room created successfully", {
         type: "success",
         position: "top-center",
         duration: 5000,
       });
+
       router.push(`/waiting-room/${data.data.room.id}`);
     } catch (error) {
-      console.error(error);
+      console.error("Error creating room:", error);
+
       toast(getErrorMessage(error), {
         type: "error",
       });
@@ -218,6 +204,23 @@ export default function CreateRoom() {
       setLoadingText("");
     }
   };
+
+  useEffect(() => {
+    if (!campaignId) return;
+
+    const loadCampaign = async () => {
+      try {
+        const { data } = await api.get(`/campaigns/${campaignId}`);
+
+        setSelectedCampaign(data.data);
+        setRoomField("campaignId", data.data.id);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadCampaign();
+  }, [campaignId]);
 
   return (
     <>
@@ -472,9 +475,10 @@ export default function CreateRoom() {
       <JoinRoomDialog
         open={joinRoomDialog}
         onOpenChange={setJoinRoomDialog}
-        joinRoomInput={characterForm}
-        handleJoinRoomInput={setCharacterField}
+        joinRoomInput={joinRoomForm}
+        setJoinRoomInput={setJoinRoomForm}
         onJoin={handleCreateRoom}
+        needCode={false}
         suggestions={suggestions}
         onRetrySuggestions={handleRetrySuggestions}
       />
