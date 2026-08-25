@@ -1,16 +1,20 @@
-import type { Campaign as BaseCampaign } from "@/server/validators/campaigns";
+import type { InferSelectModel } from "drizzle-orm";
+
+import type { campaigns } from "@/db/schema";
 import type { Users } from "@/server/validators/users";
 import { Theme, ThemeOption } from "./theme";
+
+export type Campaign = InferSelectModel<typeof campaigns>;
+
+export type CampaignWithRelations = Campaign & {
+  creator: Pick<Users, "id" | "name" | "image" | "email">;
+  theme: Pick<Theme, "id" | "name" | "icon">;
+};
 
 export type WorldSetupField = {
   id: string;
   key: string;
   value: string;
-};
-
-export type CampaignWithRelations = BaseCampaign & {
-  creator: Pick<Users, "id" | "name" | "image" | "email">;
-  theme: Pick<Theme, "id" | "name" | "icon">;
 };
 
 export type CampaignForm = {
