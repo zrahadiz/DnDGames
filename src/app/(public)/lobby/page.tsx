@@ -27,7 +27,7 @@ import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { Search, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
-import { JoinRoomInput } from "@/server/validators/roomPlayers";
+import { JoinRoomInput } from "@/types/roomPlayers";
 
 const STATUS_CONFIG = {
   waiting: {

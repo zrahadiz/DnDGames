@@ -1,5 +1,8 @@
-import type { GameEvent as BaseGameEvent } from "@/server/validators/gameEvents";
-import { Characters } from "@/server/validators/character";
+import type { InferSelectModel } from "drizzle-orm";
+import { gameEvents } from "@/db/schema";
+import { Characters } from "./characters";
+
+export type GameEvent = InferSelectModel<typeof gameEvents>;
 
 export type GameEventPayload =
   | {
@@ -28,7 +31,7 @@ export type CreateCombatInput = {
   how: string;
 };
 
-export type GameEventWithRelations = BaseGameEvent & {
+export type GameEventWithRelations = GameEvent & {
   characters: Pick<
     Characters,
     "id" | "name" | "race" | "characterClass" | "level" | "hp" | "mana"

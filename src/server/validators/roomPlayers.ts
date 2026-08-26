@@ -1,13 +1,7 @@
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-zod";
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import { roomPlayers } from "@/db/schema";
-
-export const roomPlayersResponseSchema = createSelectSchema(roomPlayers);
 
 export const createRoomPlayerSchema = createInsertSchema(roomPlayers).omit({
   id: true,
@@ -38,11 +32,3 @@ export const joinRoomSchema = z.object({
     backstory: z.string().optional(),
   }),
 });
-
-export type JoinRoomInput = z.infer<typeof joinRoomSchema>;
-
-export type RoomPlayer = z.infer<typeof roomPlayersResponseSchema>;
-
-export type CreateRoomPlayerInput = z.infer<typeof createRoomPlayerSchema>;
-
-export type UpdateRoomPlayerInput = z.infer<typeof updateRoomPlayerSchema>;

@@ -17,9 +17,9 @@ import { getErrorMessage } from "@/lib/errors";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { CharacterSuggestions } from "@/types/characters";
-import { JoinRoomInput } from "@/server/validators/roomPlayers";
 
 import { useSearchParams } from "next/navigation";
+import { JoinRoomInput } from "@/types/roomPlayers";
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);

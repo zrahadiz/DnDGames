@@ -1,7 +1,7 @@
 // types/socket.ts
-import { RoomPlayer } from "@/server/validators/roomPlayers";
-import { Characters } from "@/server/validators/character";
 import { RoomDetail } from "./rooms";
+import { Characters } from "./characters";
+import { RoomPlayer } from "./roomPlayers";
 
 export type PlayerWithCharacter = RoomPlayer & {
   character: Characters | null;

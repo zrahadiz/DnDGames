@@ -1,3 +1,4 @@
-import type { Users as Baseusers } from "@/server/validators/users";
+import type { InferSelectModel } from "drizzle-orm";
+import type { user } from "@/db/schema";
 
-export type Users = Baseusers;
+export type Users = InferSelectModel<typeof user>;

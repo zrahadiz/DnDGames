@@ -18,7 +18,7 @@ import {
   ClassSuggestion,
   CharacterSuggestions,
 } from "@/types/characters";
-import { JoinRoomInput } from "@/server/validators/roomPlayers";
+import { JoinRoomInput } from "@/types/roomPlayers";
 
 interface JoinRoomDialogProps {
   open: boolean;

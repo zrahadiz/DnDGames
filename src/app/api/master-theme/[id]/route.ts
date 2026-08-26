@@ -6,10 +6,7 @@ import { apiResponse } from "@/server/utils/apiResponse";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 
-import {
-  createThemeSchema,
-  updateThemeSchema,
-} from "@/server/validators/themes";
+import { updateThemeSchema } from "@/server/validators/themes";
 
 type Params = Promise<{ id: string }>;
 

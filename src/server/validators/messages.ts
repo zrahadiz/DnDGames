@@ -1,13 +1,7 @@
-import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
-} from "drizzle-zod";
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import { messages } from "@/db/schema";
-
-export const messagesResponseSchema = createSelectSchema(messages);
 
 export const createMessageSchema = createInsertSchema(messages)
   .omit({
@@ -38,9 +32,3 @@ export const updateMessageSchema = createUpdateSchema(messages)
       .min(1, "Message cannot be empty")
       .max(5000, "Message too long"),
   });
-
-export type Message = z.infer<typeof messagesResponseSchema>;
-
-export type CreateMessageInput = z.infer<typeof createMessageSchema>;
-
-export type UpdateMessageInput = z.infer<typeof updateMessageSchema>;

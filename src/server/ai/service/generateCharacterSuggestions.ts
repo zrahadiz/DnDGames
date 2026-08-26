@@ -7,8 +7,7 @@ import { generateAiResponse } from "@/server/ai/config";
 
 import { promptCharacterSuggestions } from "@/server/ai/prompts/characterSuggestions";
 import { aiSuggestionSchema } from "@/server/validators/ai";
-
-import { Campaign } from "@/server/validators/campaigns";
+import { Campaign } from "@/types/campaigns";
 
 export async function generateCampaignSuggestions(campaign: Campaign) {
   try {

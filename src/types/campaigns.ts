@@ -1,8 +1,8 @@
 import type { InferSelectModel } from "drizzle-orm";
 
 import type { campaigns } from "@/db/schema";
-import type { Users } from "@/server/validators/users";
 import { Theme, ThemeOption } from "./theme";
+import { Users } from "./users";
 
 export type Campaign = InferSelectModel<typeof campaigns>;
 

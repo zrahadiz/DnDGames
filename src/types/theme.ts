@@ -1,5 +1,6 @@
-import type { Themes as Basetheme } from "@/server/validators/themes";
+import type { InferSelectModel } from "drizzle-orm";
+import type { themes } from "@/db/schema";
 
-export type Theme = Basetheme;
+export type Theme = InferSelectModel<typeof themes>;
 
 export type ThemeOption = Pick<Theme, "id" | "name" | "icon">;

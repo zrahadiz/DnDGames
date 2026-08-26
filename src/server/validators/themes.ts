@@ -1,13 +1,6 @@
-import {
-  createInsertSchema,
-  createUpdateSchema,
-  createSelectSchema,
-} from "drizzle-zod";
-import { z } from "zod";
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 
 import { themes } from "@/db/schema";
-
-export const themeResponseSchema = createSelectSchema(themes);
 
 export const createThemeSchema = createInsertSchema(themes).omit({
   id: true,
@@ -21,5 +14,3 @@ export const updateThemeSchema = createUpdateSchema(themes).omit({
   createdAt: true,
   createdBy: true,
 });
-
-export type Themes = z.infer<typeof themeResponseSchema>;

@@ -1,11 +1,16 @@
-import type { Room as BaseRoom } from "@/server/validators/rooms";
-import type { Campaign } from "@/server/validators/campaigns";
+import type { InferSelectModel } from "drizzle-orm";
+
+import { rooms } from "@/db/schema";
+
+import { Characters } from "./characters";
+import { Campaign } from "./campaigns";
 import { Theme } from "./theme";
 import { Users } from "./users";
-import { RoomPlayer } from "@/server/validators/roomPlayers";
-import { Characters } from "@/server/validators/character";
+import { RoomPlayer } from "./roomPlayers";
 
-export type RoomWithRelations = BaseRoom & {
+export type Rooms = InferSelectModel<typeof rooms>;
+
+export type RoomWithRelations = Rooms & {
   hasCode: boolean;
   campaign: Pick<Campaign, "id" | "title" | "description"> & {
     theme: Pick<Theme, "id" | "name" | "icon">;
@@ -13,14 +18,21 @@ export type RoomWithRelations = BaseRoom & {
   host: Pick<Users, "id" | "name">;
 };
 
-export type RoomDetail = BaseRoom & {
+export type RoomDetail = Rooms & {
   campaign: Pick<Campaign, "id" | "title" | "description"> & {
     theme: Pick<Theme, "id" | "name" | "icon">;
   };
-  players: (RoomPlayer & {
-    character: Characters | null;
-  })[];
+  players: Array<
+    RoomPlayer & {
+      character: Characters | null;
+    }
+  >;
 };
+
+export type RoomCharacterContext = Pick<
+  Characters,
+  "name" | "race" | "characterClass" | "level" | "hp" | "mana" | "backstory"
+>;
 
 export type RoomContext = {
   id: string;
@@ -41,27 +53,7 @@ export type RoomContext = {
 
   players: Array<
     Pick<RoomPlayer, "userId" | "role"> & {
-      character: Pick<
-        Characters,
-        | "name"
-        | "race"
-        | "characterClass"
-        | "level"
-        | "hp"
-        | "mana"
-        | "backstory"
-      > | null;
+      character: RoomCharacterContext | null;
     }
   >;
 };
-
-// export type CampaignForm = {
-//   title: string;
-//   description: string;
-//   backgroundLore: string;
-//   startingObjective: string;
-//   startingLocation: string;
-//   isOfficial: boolean;
-//   theme: ThemeOption | null;
-//   worldSetup: WorldSetupField[];
-// };
