@@ -166,7 +166,6 @@ export default function JoinRoomDialog({
     }));
   };
 
-  console.log("code: ", needCode);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 border-0 bg-transparent shadow-none w-full max-w-lg max-h-[90vh]">

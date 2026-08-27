@@ -21,6 +21,21 @@ const socketUserMap = new Map<
   }
 >();
 
+// Helper Function to update the player's connection status in the database
+const setPlayerConnection = async (
+  roomId: string,
+  userId: string,
+  isConnected: boolean,
+) => {
+  await db
+    .update(roomPlayers)
+    .set({
+      isConnected,
+      lastSeenAt: new Date(),
+    })
+    .where(and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)));
+};
+
 io.use(async (socket, next) => {
   try {
     const cookieHeader = socket.handshake.headers.cookie;
@@ -103,11 +118,29 @@ io.on("connection", (socket) => {
       const currentUser = socket.data.user;
 
       if (!currentUser) {
+        socket.emit("error_message", {
+          message: "Unauthorized",
+        });
         return;
       }
 
       const userId = currentUser.user.id;
       const roomKey = `room_${roomId}`;
+
+      // Leave previous room if this socket was already associated with one
+      const previousInfo = socketUserMap.get(socket.id);
+
+      if (previousInfo && previousInfo.roomId !== roomId) {
+        const previousRoomKey = `room_${previousInfo.roomId}`;
+
+        socket.leave(previousRoomKey);
+
+        await setPlayerConnection(
+          previousInfo.roomId,
+          previousInfo.userId,
+          false,
+        );
+      }
 
       socket.join(roomKey);
 
@@ -116,32 +149,117 @@ io.on("connection", (socket) => {
         userId,
       });
 
-      await db
-        .update(roomPlayers)
-        .set({
-          isConnected: true,
-          lastSeenAt: new Date(),
-        })
-        .where(
-          and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)),
-        );
+      await setPlayerConnection(roomId, userId, true);
 
       const room = await getRoomState(roomId);
 
-      if (!room) return;
+      if (!room) {
+        socket.leave(roomKey);
+        socketUserMap.delete(socket.id);
+
+        await setPlayerConnection(roomId, userId, false);
+
+        return;
+      }
 
       io.to(roomKey).emit("room_update", {
         type: "room_state_updated",
         room,
       });
+
+      console.log("User joined room:", {
+        userId,
+        roomId,
+        socketId: socket.id,
+      });
     } catch (error) {
-      console.error(error);
+      console.error("Failed to join room:", error);
 
       socket.emit("error_message", {
         message: "Failed to join room",
       });
     }
   });
+
+  socket.on(
+    "leave_room",
+    async (
+      { roomId }: { roomId: string },
+      callback?: (response: { success: boolean }) => void,
+    ) => {
+      try {
+        const currentUser = socket.data.user;
+
+        if (!currentUser) {
+          callback?.({ success: false });
+          return;
+        }
+
+        const userId = currentUser.user.id;
+        const roomKey = `room_${roomId}`;
+
+        const info = socketUserMap.get(socket.id);
+
+        console.log("leave_room:", {
+          socketId: socket.id,
+          userId,
+          roomId,
+          info,
+        });
+
+        if (!info) {
+          console.log("No socket info found");
+
+          callback?.({ success: true });
+          return;
+        }
+
+        // Make sure this socket actually belongs to this room
+        if (info.roomId !== roomId || info.userId !== userId) {
+          console.log("Socket room mismatch");
+
+          callback?.({ success: true });
+          return;
+        }
+
+        // Leave Socket.IO room
+        socket.leave(roomKey);
+
+        // Update DB
+        await setPlayerConnection(roomId, userId, false);
+
+        // Remove socket-room association
+        socketUserMap.delete(socket.id);
+
+        console.log("Player marked disconnected");
+
+        // Get updated room state
+        const room = await getRoomState(roomId);
+
+        if (room) {
+          io.to(roomKey).emit("room_update", {
+            type: "room_state_updated",
+            room,
+          });
+        }
+
+        console.log("User left room:", {
+          userId,
+          roomId,
+          socketId: socket.id,
+        });
+
+        callback?.({
+          success: true,
+        });
+      } catch (error) {
+        console.error("Failed to leave room:", error);
+        callback?.({
+          success: false,
+        });
+      }
+    },
+  );
 
   socket.on("start_game", async ({ roomId }) => {
     console.log("start_game event", { roomId });
@@ -170,33 +288,37 @@ io.on("connection", (socket) => {
 
       if (!info) return;
 
-      await db
-        .update(roomPlayers)
-        .set({
-          isConnected: false,
-          lastSeenAt: new Date(),
-        })
-        .where(
-          and(
-            eq(roomPlayers.roomId, info.roomId),
-            eq(roomPlayers.userId, info.userId),
-          ),
-        );
+      const { roomId, userId } = info;
+      const roomKey = `room_${roomId}`;
 
       socketUserMap.delete(socket.id);
 
-      const room = await getRoomState(info.roomId);
+      // Check whether this user still has another socket
+      // connected to the same room.
+      const roomSockets = await io.in(roomKey).fetchSockets();
 
-      console.log("User disconnected:", info.userId, "from room:", info.roomId);
+      const stillConnected = roomSockets.some(
+        (roomSocket) => roomSocket.data.user?.user?.id === userId,
+      );
+
+      if (stillConnected) {
+        return;
+      }
+
+      await setPlayerConnection(roomId, userId, false);
+
+      const room = await getRoomState(roomId);
+
+      console.log("User disconnected:", userId, "from room:", roomId);
 
       if (!room) return;
 
-      io.to(`room_${info.roomId}`).emit("room_update", {
+      io.to(roomKey).emit("room_update", {
         type: "room_state_updated",
         room,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Failed to handle disconnect:", error);
     }
   });
 });

@@ -56,6 +56,12 @@ export async function GET(req: NextRequest) {
           },
         },
       },
+      players: {
+        columns: {
+          id: true,
+          userId: true,
+        },
+      },
       host: {
         columns: {
           id: true,

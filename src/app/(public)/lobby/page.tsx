@@ -28,6 +28,7 @@ import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { Search, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { JoinRoomInput } from "@/types/roomPlayers";
+import { useAuthStore } from "@/stores/auth-store";
 
 const STATUS_CONFIG = {
   waiting: {
@@ -54,17 +55,11 @@ const STATUS_CONFIG = {
 };
 
 export default function Home() {
-  const router = useRouter();
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
-
   const [rooms, setRooms] = useState<RoomWithRelations[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] =
-    useState<CampaignWithRelations | null>(null);
-  const [campaignId, setCampaignId] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(6);
   const [pagination, setPagination] = useState({
@@ -74,39 +69,10 @@ export default function Home() {
     totalPages: 1,
   });
 
-  const fetchRooms = async () => {
-    setLoadingState(true);
-    setLoadingText("Fetching rooms...");
-    console.log("Fetching rooms with params:", {
-      campaignId,
-    });
-    try {
-      const { data } = await api.get("/rooms", {
-        params: {
-          search,
-          status,
-          campaignId,
-          page,
-          limit,
-        },
-      });
-      console.log("Rooms fetched: ", data.data);
-      setRooms(data.data);
-      setPagination(data.pagination);
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-      toast(getErrorMessage(error), {
-        type: "error",
-      });
-    } finally {
-      setLoadingState(false);
-      setLoadingText("");
-    }
-  };
-
-  useEffect(() => {
-    fetchRooms();
-  }, [search, status, campaignId, page, limit]);
+  const [campaignId, setCampaignId] = useState("");
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] =
+    useState<CampaignWithRelations | null>(null);
 
   const [suggestions, setSuggestions] = useState<CharacterSuggestions | null>(
     null,
@@ -125,6 +91,46 @@ export default function Home() {
       backstory: "",
     },
   });
+
+  const { user, fetchUser } = useAuthStore();
+  const router = useRouter();
+
+  const fetchRooms = async () => {
+    setLoadingState(true);
+    setLoadingText("Fetching rooms...");
+    try {
+      const { data } = await api.get("/rooms", {
+        params: {
+          search,
+          status,
+          campaignId,
+          page,
+          limit,
+        },
+      });
+      setRooms(data.data);
+      setPagination(data.pagination);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
+  const handleRoomAction = async (room: RoomWithRelations) => {
+    const isRejoin = room.players.some((player) => player.userId === user?.id);
+
+    if (isRejoin) {
+      router.push(`/rooms/${room.id}`);
+      return;
+    }
+
+    await openJoinDialog(room.id, room.campaignId, room.hasCode);
+  };
 
   const openJoinDialog = async (
     roomId: string,
@@ -208,8 +214,13 @@ export default function Home() {
   };
 
   useEffect(() => {
+    fetchRooms();
+  }, [search, status, campaignId, page, limit]);
+
+  useEffect(() => {
     socket.connect();
     fetchRooms();
+
     socket.on("connect", () => {
       console.log("connected:", socket.id);
     });
@@ -217,6 +228,10 @@ export default function Home() {
     socket.on("error_message", (msg: string) => {
       console.error("socket error:", msg);
     });
+
+    if (!user) {
+      fetchUser();
+    }
   }, []);
 
   return (
@@ -238,6 +253,14 @@ export default function Home() {
             <p className="text-sm italic font-serif text-[#7a6548] max-w-md mx-auto">
               Find your party. Join the adventure. Or open a room of your own.
             </p>
+
+            {user && (
+              <div className="flex items-center gap-2">
+                <p className="text-[12px] font-serif text-[#c8a96e]">
+                  {user.id} - {user.name}
+                </p>
+              </div>
+            )}
 
             {/* Ornamental divider */}
             <OrnamentalDivider />
@@ -374,7 +397,6 @@ export default function Home() {
                           {st.label}
                         </span>
                       </div>
-
                       {/* Campaign title */}
                       <div className="rounded-xl border border-[rgba(200,169,110,0.08)] bg-black/20 px-3 py-2">
                         <p className="text-[11px] font-cinzel tracking-wide text-[#8a6f3e] mb-0.5">
@@ -397,25 +419,32 @@ export default function Home() {
                           by {room.host.name}
                         </span>
                       </div>
-
                       {/* Spacer */}
                       <div className="flex-1" />
-
                       {/* Footer divider */}
                       <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(200,169,110,0.1)] to-transparent" />
-
                       {/* Join button */}
                       <Button
                         variant="outline"
-                        onClick={() =>
-                          openJoinDialog(room.id, room.campaignId, room.hasCode)
+                        onClick={() => handleRoomAction(room)}
+                        disabled={
+                          room.status === "finished" ||
+                          (room.status !== "waiting" &&
+                            !room.players.some(
+                              (player) => player.userId === user?.id,
+                            ))
                         }
-                        disabled={room.status === "finished"}
                         className="w-full rounded-xl border-[rgba(200,169,110,0.25)] bg-[rgba(200,169,110,0.06)] font-cinzel text-xs tracking-wider text-[#d4b87a] hover:border-[rgba(200,169,110,0.5)] hover:bg-[rgba(200,169,110,0.12)] hover:text-[#e8d5a3] transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-[rgba(200,169,110,0.06)] disabled:hover:border-[rgba(200,169,110,0.25)]"
                       >
                         {room.status === "finished"
                           ? "Concluded"
-                          : "⚔ Join Room"}
+                          : room.status === "waiting"
+                            ? "⚔ Join Room"
+                            : room.players.some(
+                                  (player) => player.userId === user?.id,
+                                )
+                              ? "↻ Rejoin"
+                              : "Room already in progress"}
                       </Button>
                     </div>
                   </div>

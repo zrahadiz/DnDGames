@@ -16,6 +16,7 @@ export type RoomWithRelations = Rooms & {
     theme: Pick<Theme, "id" | "name" | "icon">;
   };
   host: Pick<Users, "id" | "name">;
+  players: Array<Pick<RoomPlayer, "id" | "userId" | "role">>;
 };
 
 export type RoomDetail = Rooms & {

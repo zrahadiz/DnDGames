@@ -25,25 +25,31 @@ import { RoomUpdate } from "@/types/socket";
 
 import { useRouter } from "next/navigation";
 import DiceRollOverlay from "@/components/feedback/diceOverlay";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
-export default function Home() {
-  const [gameEvents, setGameEvents] = useState<GameEventWithRelations[]>([]);
-  const [room, setRoom] = useState<RoomDetail | null>(null);
-  const [turnProgress, setTurnProgress] = useState<TurnProgress | null>(null);
+export default function Room() {
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [room, setRoom] = useState<RoomDetail | null>(null);
+  const [diceOpen, setDiceOpen] = useState(false);
+  const [diceResult, setDiceResult] = useState(0);
+  const [gameEvents, setGameEvents] = useState<GameEventWithRelations[]>([]);
+  const [turnProgress, setTurnProgress] = useState<TurnProgress | null>(null);
   const [input, setInput] = useState("");
-  const [pendingAction, setPendingAction] = useState<
-    "combat" | "dice_roll" | "lockpick" | null
-  >(null);
-
   const [combatDialog, setCombatDialog] = useState(false);
+
   const [combatForm, setCombatForm] = useState<CreateCombatInput>({
     target: "",
     how: "",
   });
+
+  const [pendingAction, setPendingAction] = useState<
+    "combat" | "dice_roll" | "lockpick" | null
+  >(null);
+
   const handleCombatInput = (key: keyof CreateCombatInput, value: string) => {
     setCombatForm((prev) => ({
       ...prev,
@@ -51,13 +57,9 @@ export default function Home() {
     }));
   };
 
-  const [diceOpen, setDiceOpen] = useState(false);
-  const [diceResult, setDiceResult] = useState(0);
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const params = useParams();
   const roomId = params.id;
-
   const router = useRouter();
 
   const fetchRooms = async () => {
@@ -65,7 +67,6 @@ export default function Home() {
     setLoadingText("Fetching rooms...");
     try {
       const { data } = await api.get(`/rooms/${roomId}`);
-
       setRoom(data.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
@@ -89,11 +90,6 @@ export default function Home() {
       setLoadingText("");
     }
   };
-
-  useEffect(() => {
-    fetchRooms();
-    fetchEvents();
-  }, [roomId]);
 
   const submitAction = async () => {
     if (!input.trim()) return;
@@ -133,6 +129,40 @@ export default function Home() {
     }
   };
 
+  const handleLeaveGame = () => {
+    if (!roomId) return;
+
+    socket.emit("leave_room", { roomId }, (response: { success: boolean }) => {
+      console.log("leave_room response:", response);
+      if (response.success) {
+        router.push("/lobby");
+      }
+    });
+  };
+
+  const kickPlayerHandler = async (targetUserId: string) => {
+    setLoadingState(true);
+    setLoadingText("Kicking player...");
+    try {
+      const { data } = await api.post(`/rooms/${roomId}/kick`, {
+        userTargetId: targetUserId,
+      });
+      console.log("Kick player response:", data);
+      if (data.success) {
+        console.log("Emitting sync_room_state after kicking player");
+        socket.emit("sync_room_state", {
+          roomId,
+          kick: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error kicking player:", error);
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
   useEffect(() => {
     const handleRoomUpdate = (update: RoomUpdate) => {
       switch (update.type) {
@@ -154,26 +184,11 @@ export default function Home() {
   }, [router]);
 
   useEffect(() => {
-    const handleGameEvent = ({ event }: { event: GameEventWithRelations }) => {
-      console.log("received game event", event);
-      setGameEvents((prev) => {
-        const exists = prev.some((e) => e.id === event.id);
-
-        if (exists) return prev;
-
-        return [...prev, event];
-      });
-      if (event.eventType === "ai_narration") {
-        setIsAiThinking(false);
-      }
-    };
-
-    socket.on("game_event_created", handleGameEvent);
-
-    return () => {
-      socket.off("game_event_created", handleGameEvent);
-    };
-  }, []);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [gameEvents]);
 
   useEffect(() => {
     const resolveTurn = async () => {
@@ -210,6 +225,20 @@ export default function Home() {
   }, [turnProgress, roomId]);
 
   useEffect(() => {
+    if (!roomId) return;
+
+    console.log("Joining room", roomId);
+    socket.emit("join_room", {
+      roomId,
+    });
+  }, [roomId]);
+
+  useEffect(() => {
+    fetchRooms();
+    fetchEvents();
+  }, [roomId]);
+
+  useEffect(() => {
     const handleAiGeneration = ({ started }: { started: boolean }) => {
       setIsAiThinking(started);
       console.log("ai is thinking: ", isAiThinking);
@@ -223,19 +252,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!roomId) return;
+    const handleGameEvent = ({ event }: { event: GameEventWithRelations }) => {
+      console.log("received game event", event);
+      setGameEvents((prev) => {
+        const exists = prev.some((e) => e.id === event.id);
 
-    socket.emit("join_room", {
-      roomId,
-    });
-  }, [roomId]);
+        if (exists) return prev;
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
-    }
-  }, [gameEvents]);
+        return [...prev, event];
+      });
+      if (event.eventType === "ai_narration") {
+        setIsAiThinking(false);
+      }
+    };
+
+    socket.on("game_event_created", handleGameEvent);
+
+    return () => {
+      socket.off("game_event_created", handleGameEvent);
+    };
+  }, []);
 
   if (!room) {
     return (
@@ -299,7 +335,11 @@ export default function Home() {
           {/* ── LEFT: player cards ── */}
           <div className="hidden lg:flex col-span-3 flex-col gap-2.5 overflow-y-auto no-scrollbar">
             {leftPlayers.map((player) => (
-              <PlayerSideCard key={player.id} player={player} />
+              <PlayerSideCard
+                key={player.id}
+                player={player}
+                onKick={() => kickPlayerHandler(player.userId)}
+              />
             ))}
           </div>
 
@@ -516,7 +556,11 @@ export default function Home() {
           {/* ── RIGHT: player cards ── */}
           <div className="hidden lg:flex col-span-3 flex-col gap-2.5 overflow-y-auto no-scrollbar">
             {rightPlayers.map((player) => (
-              <PlayerSideCard key={player.id} player={player} />
+              <PlayerSideCard
+                key={player.id}
+                player={player}
+                onKick={() => kickPlayerHandler(player.userId)}
+              />
             ))}
           </div>
         </div>
@@ -524,8 +568,23 @@ export default function Home() {
         {/* ── Mobile player strip (shown below md) ── */}
         <div className="lg:hidden shrink-0 flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {room.players.map((player) => (
-            <MobilePlayerChip key={player.id} player={player} />
+            <MobilePlayerChip
+              key={player.id}
+              player={player}
+              onKick={() => kickPlayerHandler(player.userId)}
+            />
           ))}
+        </div>
+
+        <div className="fixed bottom-8 right-8 z-20">
+          <Button
+            variant="outline"
+            onClick={handleLeaveGame}
+            className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-950/40 px-5 py-3 font-cinzel text-sm tracking-wider text-red-200 shadow-lg backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-red-500/60 hover:bg-red-900/60 hover:text-white hover:ring-2 hover:ring-red-500/20 active:scale-[0.98] cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Leave Game</span>
+          </Button>
         </div>
       </div>
 

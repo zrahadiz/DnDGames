@@ -63,8 +63,6 @@ export default function Header() {
         <div className="hidden md:flex justify-center items-center gap-8">
           {navItems.map((item) => {
             const active = pathname === item.href;
-            console.log("lela: ", pathname);
-            console.log("LLL: ", item.href);
             return (
               <Link
                 key={item.href}
