@@ -19,6 +19,9 @@ export async function GET(req: Request, { params }: { params: Params }) {
 
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
+      with: {
+        players: true,
+      },
     });
 
     if (!room) {
@@ -42,6 +45,14 @@ export async function GET(req: Request, { params }: { params: Params }) {
       });
     }
 
+    const submittedActions = await db.query.gameEvents.findMany({
+      where: and(
+        eq(gameEvents.roomId, roomId),
+        eq(gameEvents.turnNumber, room.currentTurn),
+        ne(gameEvents.eventType, "ai_narration"),
+      ),
+    });
+
     const data = await db.query.gameEvents.findMany({
       where: eq(gameEvents.roomId, roomId),
       with: {
@@ -55,10 +66,29 @@ export async function GET(req: Request, { params }: { params: Params }) {
       orderBy: (gameEvents, { asc }) => [asc(gameEvents.createdAt)],
     });
 
+    const submittedPlayerIds = new Set(
+      submittedActions.map((action) => action.roomPlayerId),
+    );
+
+    const remainingPlayers = room.players.filter(
+      (player) => !submittedPlayerIds.has(player.id),
+    );
+
+    const allPlayersSubmitted = remainingPlayers.length === 0;
+
     return apiResponse(200, {
       success: true,
       message: "Game Events fetched successfully",
-      data,
+      data: {
+        events: data,
+        turnProgress: {
+          currentTurn: room.currentTurn,
+          submittedCount: submittedActions.length,
+          totalPlayers: room.players.length,
+          remainingCount: remainingPlayers.length,
+          allPlayersSubmitted,
+        },
+      },
     });
   } catch (error) {
     console.error(error);

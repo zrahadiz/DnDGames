@@ -25,7 +25,7 @@ import { CampaignWithRelations } from "@/types/campaigns";
 import { CharacterSuggestions } from "@/types/characters";
 import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import { Search, UsersRound } from "lucide-react";
+import { RefreshCw, Search, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { JoinRoomInput } from "@/types/roomPlayers";
 import { useAuthStore } from "@/stores/auth-store";
@@ -254,14 +254,6 @@ export default function Home() {
               Find your party. Join the adventure. Or open a room of your own.
             </p>
 
-            {user && (
-              <div className="flex items-center gap-2">
-                <p className="text-[12px] font-serif text-[#c8a96e]">
-                  {user.id} - {user.name}
-                </p>
-              </div>
-            )}
-
             {/* Ornamental divider */}
             <OrnamentalDivider />
           </div>
@@ -347,6 +339,14 @@ export default function Home() {
                 <SelectItem value="24">24 / page</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant="ghost"
+              className="p-0 h-6 w-6 rounded-lg border border-[rgba(200,169,110,0.2)] bg-[#120c05] font-cinzel text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+              onClick={fetchRooms}
+            >
+              <RefreshCw className="text-[#5a4830]" />
+            </Button>
           </div>
 
           {/* ── Room grid ── */}

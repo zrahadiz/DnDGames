@@ -98,10 +98,13 @@ io.on("connection", (socket) => {
     async ({
       roomId,
       event,
+      turnProgress,
     }: {
       roomId: string;
       event: GameEventWithRelations;
+      turnProgress: TurnProgress;
     }) => {
+      console.log("game_event_created full", event);
       console.log("game_event_created received", {
         roomId,
         eventId: event.id,
@@ -109,6 +112,7 @@ io.on("connection", (socket) => {
 
       io.to(`room_${roomId}`).emit("game_event_created", {
         event,
+        turnProgress,
       });
     },
   );

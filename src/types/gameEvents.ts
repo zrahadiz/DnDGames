@@ -31,17 +31,17 @@ export type CreateCombatInput = {
   how: string;
 };
 
-export type GameEventWithRelations = GameEvent & {
-  characters: Pick<
-    Characters,
-    "id" | "name" | "race" | "characterClass" | "level" | "hp" | "mana"
-  > | null;
-};
-
 export type TurnProgress = {
   currentTurn: number;
   submittedCount: number;
   totalPlayers: number;
   remainingCount: number;
   allPlayersSubmitted: boolean;
+};
+
+export type GameEventWithRelations = GameEvent & {
+  characters: Pick<
+    Characters,
+    "id" | "name" | "race" | "characterClass" | "level" | "hp" | "mana"
+  > | null;
 };

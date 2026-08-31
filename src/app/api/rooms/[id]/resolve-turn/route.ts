@@ -139,7 +139,17 @@ export async function POST(req: Request, { params }: { params: Params }) {
     return apiResponse(200, {
       success: true,
       message: "Turn resolved successfully",
-      data,
+      data: {
+        aiEvent: data.aiEvent,
+        nextTurn: data.nextTurn,
+        turnProgress: {
+          currentTurn: data.nextTurn,
+          submittedCount: 0,
+          totalPlayers: room.players.length,
+          remainingCount: room.players.length,
+          allPlayersSubmitted: false,
+        },
+      },
     });
   } catch (error) {
     console.error(error);

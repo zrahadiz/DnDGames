@@ -61,6 +61,7 @@ export default function Room() {
   const params = useParams();
   const roomId = params.id;
   const router = useRouter();
+  const resolvingRef = useRef(false);
 
   const fetchRooms = async () => {
     setLoadingState(true);
@@ -81,8 +82,9 @@ export default function Room() {
     setLoadingText("Mengambil Pesan");
     try {
       const { data } = await api.get(`/rooms/${roomId}/actions`);
-      console.log("fetched messages:", gameEvents);
-      setGameEvents(data.data);
+      console.log("fetched messages:", data);
+      setGameEvents(data.data.events);
+      setTurnProgress(data.data.turnProgress);
     } catch (error) {
       console.error(error);
     } finally {
@@ -107,13 +109,19 @@ export default function Room() {
       setIsSubmitting(true);
 
       const { data } = await api.post(`/rooms/${roomId}/actions`, payload);
-
-      setTurnProgress(data.data.turnProgress);
+      console.log("Submitted action:", data);
+      const updatedTurnProgress = data.data.turnProgress;
+      setTurnProgress(updatedTurnProgress);
 
       socket.emit("game_event_created", {
         roomId,
         event: data.data.event,
+        turnProgress: data.data.turnProgress,
       });
+
+      if (updatedTurnProgress?.allPlayersSubmitted) {
+        resolveTurn();
+      }
 
       return data.data;
     } catch (error) {
@@ -126,6 +134,41 @@ export default function Room() {
       throw error;
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const resolveTurn = async () => {
+    if (resolvingRef.current) return;
+    resolvingRef.current = true;
+
+    socket.emit("generate_ai_response", {
+      roomId,
+      started: true,
+    });
+
+    try {
+      const { data } = await api.post(`/rooms/${roomId}/resolve-turn`);
+      console.log("Turn resolved:", data);
+
+      socket.emit("game_event_created", {
+        roomId,
+        event: data.data.aiEvent,
+        turnProgress: data.data.turnProgress,
+      });
+
+      socket.emit("sync_room_state", {
+        roomId,
+      });
+    } catch (error: any) {
+      if (error?.response?.status !== 409) {
+        console.error(error);
+        socket.emit("generate_ai_response", {
+          roomId,
+          started: false,
+        });
+      }
+    } finally {
+      resolvingRef.current = false;
     }
   };
 
@@ -191,40 +234,6 @@ export default function Room() {
   }, [gameEvents]);
 
   useEffect(() => {
-    const resolveTurn = async () => {
-      if (!turnProgress?.allPlayersSubmitted) return;
-
-      socket.emit("generate_ai_response", {
-        roomId,
-        started: true,
-      });
-
-      try {
-        const { data } = await api.post(`/rooms/${roomId}/resolve-turn`);
-
-        socket.emit("game_event_created", {
-          roomId,
-          event: data.data.aiEvent,
-        });
-
-        socket.emit("sync_room_state", {
-          roomId,
-        });
-      } catch (error: any) {
-        if (error?.response?.status !== 409) {
-          console.error(error);
-          socket.emit("generate_ai_response", {
-            roomId,
-            started: false,
-          });
-        }
-      }
-    };
-
-    resolveTurn();
-  }, [turnProgress, roomId]);
-
-  useEffect(() => {
     if (!roomId) return;
 
     console.log("Joining room", roomId);
@@ -252,8 +261,22 @@ export default function Room() {
   }, []);
 
   useEffect(() => {
-    const handleGameEvent = ({ event }: { event: GameEventWithRelations }) => {
+    const handleGameEvent = ({
+      event,
+      turnProgress,
+    }: {
+      event: GameEventWithRelations;
+      turnProgress?: TurnProgress;
+    }) => {
       console.log("received game event", event);
+      if (turnProgress) {
+        setTurnProgress(turnProgress);
+      }
+
+      if (event.eventType === "ai_narration") {
+        setIsAiThinking(false);
+      }
+
       setGameEvents((prev) => {
         const exists = prev.some((e) => e.id === event.id);
 
@@ -261,9 +284,6 @@ export default function Room() {
 
         return [...prev, event];
       });
-      if (event.eventType === "ai_narration") {
-        setIsAiThinking(false);
-      }
     };
 
     socket.on("game_event_created", handleGameEvent);
