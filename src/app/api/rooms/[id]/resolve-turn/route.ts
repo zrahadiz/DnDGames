@@ -21,6 +21,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         status: true,
         hostId: true,
         currentTurn: true,
+        language: true,
       },
       with: {
         campaign: {

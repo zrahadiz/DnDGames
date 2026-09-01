@@ -20,13 +20,16 @@ export async function generateTurnNarration({
     Current Campaign Context:
     ${gameContext}
 
-    Current Turn:
-    ${room.currentTurn}
+    Game Language: ${room.language}
+
+    Current Turn: ${room.currentTurn}
 
     Player Actions:
     ${JSON.stringify(actions, null, 2)}
 
-    Instructions:                               
+    Instructions:    
+    - Limit your responses to 2–3 short paragraphs (maximum ~120 words).
+    - Use the language specified in the Game Language, no matter what the user inputs language.
     - Resolve all player actions.
     - Resolve combat actions using the supplied dice roll.
     - Higher dice rolls should generally result in better outcomes.

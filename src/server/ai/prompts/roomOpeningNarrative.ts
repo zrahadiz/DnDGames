@@ -16,8 +16,12 @@ export async function promptOpenNarrative(roomDetail: RoomContext) {
   Using the following room context, generate an immersive and thematic opening narrative for the campaign. Set the scene, introduce the world, and provide a compelling hook to engage the players.
   ${JSON.stringify(gameContext)}
 
+  Game Language: ${roomDetail.language}
+
   Requirements:
-    - The narrative should be concise yet vivid, painting a clear picture of the setting and atmosphere.
+    - Your response should use the language specified in the Game Language.
+    - The narrative should be concise, evocative, yet vivid and punchy, painting a clear picture of the setting and atmosphere.
+    - Limit your responses to 2–3 short paragraphs (maximum ~120 words).
     - It should introduce the main theme and tone of the campaign, whether it's dark and gritty, lighthearted and adventurous, or something else entirely.
     - The narrative should include a compelling hook or inciting incident that draws the players into the story and motivates them to take action.
     - Mention all player characters naturally.

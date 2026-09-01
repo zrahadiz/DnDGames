@@ -25,6 +25,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
         status: true,
         hostId: true,
         currentTurn: true,
+        language: true,
       },
 
       with: {

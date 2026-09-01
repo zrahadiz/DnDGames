@@ -41,6 +41,7 @@ export type RoomContext = {
   status: "waiting" | "playing" | "finished";
   hostId: string;
   currentTurn: number;
+  language: string;
 
   campaign: Pick<
     Campaign,

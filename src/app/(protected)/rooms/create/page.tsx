@@ -1,25 +1,32 @@
 "use client";
 import { useState, useEffect } from "react";
+import { CreateRoomInput } from "@/server/validators/rooms";
+import api from "@/lib/axios";
+import { toast } from "@/lib/toast";
+import { getErrorMessage } from "@/lib/errors";
+import { useRouter, useSearchParams } from "next/navigation";
+
+import Loading from "@/components/feedback/loading";
+import CampaignModal from "@/components/campaigns/campaignModal";
+import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
+import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
+import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import Loading from "@/components/feedback/loading";
-
-import { CreateRoomInput } from "@/server/validators/rooms";
-import api from "@/lib/axios";
-import { useRouter } from "next/navigation";
-import { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
-import CampaignModal from "@/components/campaigns/campaignModal";
-import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
-import { toast } from "@/lib/toast";
-import { getErrorMessage } from "@/lib/errors";
-import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { CharacterSuggestions } from "@/types/characters";
-
-import { useSearchParams } from "next/navigation";
 import { JoinRoomInput } from "@/types/roomPlayers";
+import { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
@@ -38,6 +45,7 @@ export default function CreateRoom() {
     name: "",
     roomCode: "",
     maxPlayers: 4,
+    language: "en",
   });
 
   const [joinRoomForm, setJoinRoomForm] = useState<JoinRoomInput>({
@@ -53,6 +61,12 @@ export default function CreateRoom() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaignId");
+
+  const availableLanguages = [
+    { label: "English", value: "en" },
+    { label: "Indonesian", value: "id" },
+    { label: "Japanese", value: "ja" },
+  ];
 
   const setRoomField = <K extends keyof CreateRoomInput>(
     key: K,
@@ -345,7 +359,7 @@ export default function CreateRoom() {
                 {/* ── Room details ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Room title — full width */}
-                  <div className="sm:col-span-2 space-y-1.5">
+                  <div className="space-y-1.5">
                     <label
                       htmlFor="name"
                       className="block text-[11px] font-cinzel tracking-[0.08em] text-[#8a6f3e]"
@@ -360,6 +374,43 @@ export default function CreateRoom() {
                       required
                       className="rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] placeholder:text-[#3a2a14] focus-visible:ring-0 focus-visible:border-[rgba(200,169,110,0.45)] font-serif"
                     />
+                  </div>
+
+                  {/* Language Select */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="language"
+                      className="block text-[11px] font-cinzel tracking-[0.08em] text-[#8a6f3e]"
+                    >
+                      Language
+                    </label>
+                    <Select
+                      value={roomForm.language}
+                      onValueChange={(value) => setRoomField("language", value)}
+                    >
+                      <SelectTrigger
+                        id="language"
+                        className="w-full rounded-xl border-[rgba(200,169,110,0.2)] bg-black/30 text-[#e8d5a3] focus:ring-0 focus:border-[rgba(200,169,110,0.45)] font-serif"
+                      >
+                        <SelectValue placeholder="Select language…" />
+                      </SelectTrigger>
+                      <SelectContent className="border-[rgba(200,169,110,0.3)] bg-[#0d0a07] text-[#e8d5a3]">
+                        <SelectGroup>
+                          <SelectLabel className="font-cinzel text-[10px] tracking-[0.1em] text-[#8a6f3e] uppercase">
+                            Languages
+                          </SelectLabel>
+                          {availableLanguages.map((item) => (
+                            <SelectItem
+                              key={item.value}
+                              value={item.value}
+                              className="font-serif focus:bg-[rgba(200,169,110,0.15)] focus:text-[#f3e5c8] cursor-pointer"
+                            >
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Max players */}

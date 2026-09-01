@@ -307,6 +307,12 @@ export const rooms = pgTable("rooms", {
     length: 10,
   }),
 
+  language: varchar("language", {
+    length: 35,
+  })
+    .notNull()
+    .default("en"),
+
   storySummary: text("story_summary"),
 
   currentProgression: text("current_progression"),
