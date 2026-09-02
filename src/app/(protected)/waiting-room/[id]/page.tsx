@@ -157,6 +157,7 @@ export default function WaitingRoom() {
       switch (update.type) {
         case "room_state_updated":
           if (update.kick) {
+            console.log("user: ", user);
             if (!user?.id) {
               return;
             }

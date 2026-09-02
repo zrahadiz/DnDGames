@@ -15,6 +15,7 @@ import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import { X } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 interface CombatFormDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ export function PlayerSideCard({
   player: RoomDetail["players"][number];
   onKick?: () => void;
 }) {
+  const role = player.role ?? "player";
   const hp = player.character?.hp ?? 0;
   const mana = player.character?.mana ?? 0;
   const maxHp = player.character?.hp ?? hp;
@@ -57,9 +59,14 @@ export function PlayerSideCard({
             <X className="text-[#5a4830]" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[13px] font-cinzel tracking-wide text-[#e8d5a3] truncate">
-              {player.character?.name ?? "Unknown"}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[13px] font-cinzel tracking-wide text-[#e8d5a3] truncate">
+                {player.character?.name ?? "Unknown"}
+              </p>
+              <Badge className="border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.1)] text-[#c8a96e] text-[10px] font-serif italic px-1.5 py-0">
+                {role}
+              </Badge>
+            </div>
             <p className="text-[11px] font-serif italic text-[#5a4830] truncate">
               {player.character?.race} · {player.character?.characterClass}
             </p>
@@ -140,9 +147,14 @@ export function MobilePlayerChip({
         className={`w-1.5 h-1.5 rounded-full shrink-0 ${player.isConnected ? "bg-emerald-400" : "bg-[#5a4830]"}`}
       />
       <div>
-        <p className="text-[12px] font-cinzel tracking-wide text-[#e8d5a3] whitespace-nowrap">
-          {player.character?.name ?? "Unknown"}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[12px] font-cinzel tracking-wide text-[#e8d5a3] whitespace-nowrap">
+            {player.character?.name ?? "Unknown"}
+          </p>
+          <Badge className="border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.1)] text-[#c8a96e] text-[10px] font-serif italic px-1.5 py-0">
+            {player.role}
+          </Badge>
+        </div>
         <p className="text-[10px] font-serif italic text-[#5a4830] whitespace-nowrap">
           HP {player.character?.hp ?? "?"} · Mana{" "}
           {player.character?.mana ?? "?"}

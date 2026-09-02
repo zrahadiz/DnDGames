@@ -1,19 +1,16 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
+import { useAuthStore } from "@/stores/auth-store";
+import { socket } from "@/lib/socket-client";
+import { toast } from "@/lib/toast";
 import api from "@/lib/axios";
 
-import Loading from "@/components/feedback/loading";
-import { socket } from "@/lib/socket-client";
-import { RoomDetail } from "@/types/rooms";
-import { toast } from "@/lib/toast";
-import {
-  CreateCombatInput,
-  GameEventWithRelations,
-  TurnProgress,
-} from "@/types/gameEvents";
+import { LogOut } from "lucide-react";
 
+import DiceRollOverlay from "@/components/feedback/diceOverlay";
+import Loading from "@/components/feedback/loading";
 import {
   MobilePlayerChip,
   PlayerSideCard,
@@ -21,14 +18,18 @@ import {
   GameEventCard,
 } from "@/components/rooms/playingRoom";
 
-import { RoomUpdate } from "@/types/socket";
-
-import { useRouter } from "next/navigation";
-import DiceRollOverlay from "@/components/feedback/diceOverlay";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+
+import { RoomUpdate } from "@/types/socket";
+import { RoomDetail } from "@/types/rooms";
+import {
+  CreateCombatInput,
+  GameEventWithRelations,
+  TurnProgress,
+} from "@/types/gameEvents";
 
 export default function Room() {
+  const { user, fetchUser } = useAuthStore();
   const [loadingState, setLoadingState] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
@@ -208,8 +209,28 @@ export default function Room() {
 
   useEffect(() => {
     const handleRoomUpdate = (update: RoomUpdate) => {
+      console.log("Received room update:", update);
       switch (update.type) {
         case "room_state_updated":
+          if (update.kick) {
+            console.log("user: ", user);
+            if (!user?.id) {
+              return;
+            }
+
+            const me = update.room.players.find(
+              (player) => player.userId === user.id,
+            );
+
+            if (!me) {
+              toast("You were kicked from the room", {
+                type: "error",
+              });
+              router.push("/lobby");
+              return;
+            }
+          }
+
           setRoom(update.room);
           break;
 
@@ -224,7 +245,7 @@ export default function Room() {
     return () => {
       socket.off("room_update", handleRoomUpdate);
     };
-  }, [router]);
+  }, [roomId, router, user?.id]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -236,15 +257,17 @@ export default function Room() {
   useEffect(() => {
     if (!roomId) return;
 
+    if (!user) {
+      fetchUser();
+    }
+
+    fetchRooms();
+    fetchEvents();
+
     console.log("Joining room", roomId);
     socket.emit("join_room", {
       roomId,
     });
-  }, [roomId]);
-
-  useEffect(() => {
-    fetchRooms();
-    fetchEvents();
   }, [roomId]);
 
   useEffect(() => {

@@ -1,9 +1,9 @@
 import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
-import { messages, roomPlayers, rooms } from "@/db/schema";
+import { roomPlayers, rooms } from "@/db/schema";
 import { GameEventWithRelations, TurnProgress } from "@/types/gameEvents";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne, asc } from "drizzle-orm";
 import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";
 import { getRoomState } from "./rooms/getRoomState";
@@ -35,6 +35,89 @@ const setPlayerConnection = async (
     })
     .where(and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)));
 };
+
+export async function transferHostIfNeeded(
+  roomId: string,
+  leavingUserId: string,
+) {
+  return db.transaction(async (tx) => {
+    const room = await tx.query.rooms.findFirst({
+      where: eq(rooms.id, roomId),
+      columns: {
+        id: true,
+        hostId: true,
+      },
+    });
+
+    if (!room) {
+      return null;
+    }
+
+    // Only transfer if the person leaving is actually the host.
+    if (room.hostId !== leavingUserId) {
+      return null;
+    }
+
+    // Find the oldest connected player.
+    const newHost = await tx.query.roomPlayers.findFirst({
+      where: and(
+        eq(roomPlayers.roomId, roomId),
+        eq(roomPlayers.isConnected, true),
+        ne(roomPlayers.userId, leavingUserId),
+      ),
+      orderBy: [asc(roomPlayers.joinedAt)],
+      columns: {
+        id: true,
+        userId: true,
+      },
+    });
+
+    if (!newHost) {
+      console.log("No connected player available for host transfer", {
+        roomId,
+      });
+
+      return null;
+    }
+
+    // Update room host
+    await tx
+      .update(rooms)
+      .set({
+        hostId: newHost.userId,
+      })
+      .where(eq(rooms.id, roomId));
+
+    // Old host -> player
+    await tx
+      .update(roomPlayers)
+      .set({
+        role: "player",
+      })
+      .where(
+        and(
+          eq(roomPlayers.roomId, roomId),
+          eq(roomPlayers.userId, leavingUserId),
+        ),
+      );
+
+    // New host -> host
+    await tx
+      .update(roomPlayers)
+      .set({
+        role: "host",
+      })
+      .where(eq(roomPlayers.id, newHost.id));
+
+    console.log("Host transferred:", {
+      roomId,
+      oldHostId: leavingUserId,
+      newHostId: newHost.userId,
+    });
+
+    return newHost.userId;
+  });
+}
 
 io.use(async (socket, next) => {
   try {
@@ -204,13 +287,6 @@ io.on("connection", (socket) => {
 
         const info = socketUserMap.get(socket.id);
 
-        console.log("leave_room:", {
-          socketId: socket.id,
-          userId,
-          roomId,
-          info,
-        });
-
         if (!info) {
           console.log("No socket info found");
 
@@ -218,26 +294,52 @@ io.on("connection", (socket) => {
           return;
         }
 
-        // Make sure this socket actually belongs to this room
         if (info.roomId !== roomId || info.userId !== userId) {
           console.log("Socket room mismatch");
+
+          callback?.({ success: false });
+          return;
+        }
+
+        // Leave the Socket.IO room first
+        socket.leave(roomKey);
+
+        // Remove this socket from tracking
+        socketUserMap.delete(socket.id);
+
+        // Check if the user still has another socket connected
+        // to the same room.
+        const roomSockets = await io.in(roomKey).fetchSockets();
+
+        const stillConnected = roomSockets.some(
+          (roomSocket) => roomSocket.data.user?.user?.id === userId,
+        );
+
+        // Another tab/device is still connected to this room.
+        if (stillConnected) {
+          console.log("User still has another socket connected:", {
+            userId,
+            roomId,
+          });
 
           callback?.({ success: true });
           return;
         }
 
-        // Leave Socket.IO room
-        socket.leave(roomKey);
-
-        // Update DB
+        // No other socket exists.
+        // Now mark the player as disconnected.
         await setPlayerConnection(roomId, userId, false);
 
-        // Remove socket-room association
-        socketUserMap.delete(socket.id);
+        // Transfer host if necessary.
+        const newHostId = await transferHostIfNeeded(roomId, userId);
 
-        console.log("Player marked disconnected");
+        console.log("Player left room:", {
+          userId,
+          roomId,
+          newHostId,
+        });
 
-        // Get updated room state
+        // Get the updated room state.
         const room = await getRoomState(roomId);
 
         if (room) {
@@ -247,20 +349,11 @@ io.on("connection", (socket) => {
           });
         }
 
-        console.log("User left room:", {
-          userId,
-          roomId,
-          socketId: socket.id,
-        });
-
-        callback?.({
-          success: true,
-        });
+        callback?.({ success: true });
       } catch (error) {
         console.error("Failed to leave room:", error);
-        callback?.({
-          success: false,
-        });
+
+        callback?.({ success: false });
       }
     },
   );
@@ -290,11 +383,15 @@ io.on("connection", (socket) => {
     try {
       const info = socketUserMap.get(socket.id);
 
-      if (!info) return;
+      if (!info) {
+        console.log("No socket info found on disconnect");
+        return;
+      }
 
       const { roomId, userId } = info;
       const roomKey = `room_${roomId}`;
 
+      // Remove this socket from our tracking first
       socketUserMap.delete(socket.id);
 
       // Check whether this user still has another socket
@@ -305,17 +402,36 @@ io.on("connection", (socket) => {
         (roomSocket) => roomSocket.data.user?.user?.id === userId,
       );
 
+      // User still has another connection to this room.
+      // Don't mark them disconnected or transfer the host.
       if (stillConnected) {
+        console.log("User still has another socket connected:", {
+          userId,
+          roomId,
+        });
+
         return;
       }
 
+      // No other socket exists for this user in this room.
+      // Now we can safely mark them as disconnected.
       await setPlayerConnection(roomId, userId, false);
 
+      // If this user was the host, transfer host to another connected player.
+      const newHostId = await transferHostIfNeeded(roomId, userId);
+
+      console.log("User disconnected:", {
+        userId,
+        roomId,
+        newHostId,
+      });
+
+      // Get updated room state after connection + host changes
       const room = await getRoomState(roomId);
 
-      console.log("User disconnected:", userId, "from room:", roomId);
-
-      if (!room) return;
+      if (!room) {
+        return;
+      }
 
       io.to(roomKey).emit("room_update", {
         type: "room_state_updated",
