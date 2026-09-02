@@ -15,9 +15,10 @@ type CardHeroProps = {
   image: StaticImageData | string;
   name: string;
   role: string;
+  isTurn: any;
 };
 
-export function CardHero({ image, name, role }: CardHeroProps) {
+export function CardHero({ image, name, role, isTurn }: CardHeroProps) {
   return (
     <Card className="w-full max-w-sm gap-2">
       <CardHeader>
@@ -32,17 +33,18 @@ export function CardHero({ image, name, role }: CardHeroProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <CardTitle>{name}</CardTitle>
-        <CardDescription>{role}</CardDescription>
+        <CardTitle className="truncate">{name}</CardTitle>
+        <CardDescription className="truncate">{role}</CardDescription>
       </CardContent>
       <CardFooter>
         <CardAction className="w-full">
-          <Button
-            onClick={() => alert("Send message")}
-            className="bg-purple-600 w-full text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-purple-700"
+          <div
+            className={`w-full text-white px-4 py-2 rounded-lg text-center ${
+              isTurn ? "bg-purple-600" : "bg-slate-400"
+            }`}
           >
-            Finish
-          </Button>
+            {isTurn ? "It's Turn" : "Waiting for turn"}
+          </div>
         </CardAction>
       </CardFooter>
     </Card>
