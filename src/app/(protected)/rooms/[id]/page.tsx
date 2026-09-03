@@ -296,7 +296,10 @@ export default function Room() {
         setTurnProgress(turnProgress);
       }
 
-      if (event.eventType === "ai_narration") {
+      if (
+        event.eventType === "ai_narration" ||
+        event.eventType === "game_end"
+      ) {
         setIsAiThinking(false);
       }
 

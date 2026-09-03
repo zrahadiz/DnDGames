@@ -438,6 +438,132 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
     );
   }
 
+  // ── End Game ─────────────────────────────────────────────────────────────
+  if (msg.eventType === "game_end") {
+    const title = payload.title as string | undefined;
+    const reason = payload.reason as string | undefined;
+    const summary = payload.summary as string | undefined;
+    const narrative = payload.narrative as string | undefined;
+    const isVictory = payload.reason === "victory";
+
+    return (
+      <div
+        className={`rounded-xl border p-5 space-y-4 relative overflow-hidden ${
+          isVictory
+            ? "border-[rgba(52,211,153,0.3)] bg-[rgba(13,148,136,0.06)]"
+            : "border-[rgba(239,68,68,0.3)] bg-[rgba(153,27,27,0.07)]"
+        }`}
+      >
+        {/* Shimmer top bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: isVictory
+              ? "linear-gradient(90deg,transparent,rgba(52,211,153,0.7),transparent)"
+              : "linear-gradient(90deg,transparent,rgba(239,68,68,0.7),transparent)",
+          }}
+        />
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={`flex items-center gap-2 text-[12px] font-cinzel tracking-wide ${
+              isVictory ? "text-[#34d399]" : "text-[#f87171]"
+            }`}
+          >
+            <span className="text-base">{isVictory ? "👑" : "💀"}</span>
+            {isVictory ? "Victory" : "Defeat"}
+          </span>
+          <span className="text-[10px] font-serif italic text-[#3a2a14] shrink-0">
+            Turn {msg.turnNumber}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div className="text-center space-y-1 py-2">
+          <p
+            className={`text-xs font-cinzel tracking-[0.2em] uppercase ${
+              isVictory ? "text-[#0d9488]" : "text-[#7a3030]"
+            }`}
+          >
+            {isVictory ? "✦ Quest Complete ✦" : "✗ Quest Failed ✗"}
+          </p>
+          <h3
+            className={`text-base font-bold font-cinzel tracking-wide leading-snug ${
+              isVictory ? "text-[#a7f3d0]" : "text-[#f8a0a0]"
+            }`}
+          >
+            {title ?? "The End"}
+          </h3>
+        </div>
+
+        {/* Ornamental divider */}
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1 h-px"
+            style={{
+              background: isVictory
+                ? "linear-gradient(90deg,transparent,rgba(52,211,153,0.2))"
+                : "linear-gradient(90deg,transparent,rgba(239,68,68,0.15))",
+            }}
+          />
+          <span
+            className={`text-base ${isVictory ? "opacity-60" : "opacity-40"}`}
+          >
+            {isVictory ? "⚔" : "🕯"}
+          </span>
+          <div
+            className="flex-1 h-px"
+            style={{
+              background: isVictory
+                ? "linear-gradient(90deg,rgba(52,211,153,0.2),transparent)"
+                : "linear-gradient(90deg,rgba(239,68,68,0.15),transparent)",
+            }}
+          />
+        </div>
+
+        {/* Narrative — the dramatic story close */}
+        {narrative && (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif italic text-[#b8a8d8]">
+            {narrative}
+          </p>
+        )}
+
+        {/* Summary box */}
+        {summary && (
+          <div
+            className={`rounded-xl border px-4 py-3 space-y-1 ${
+              isVictory
+                ? "border-[rgba(52,211,153,0.12)] bg-[rgba(13,148,136,0.05)]"
+                : "border-[rgba(239,68,68,0.12)] bg-[rgba(153,27,27,0.06)]"
+            }`}
+          >
+            <p
+              className={`text-[10px] font-cinzel tracking-widest uppercase ${
+                isVictory ? "text-[#0d9488]" : "text-[#7a3030]"
+              }`}
+            >
+              Chronicle
+            </p>
+            <p className="text-[13px] font-serif italic leading-relaxed text-[#b8b8b8]">
+              {summary}
+            </p>
+          </div>
+        )}
+
+        {/* Bottom shimmer */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{
+            background: isVictory
+              ? "linear-gradient(90deg,transparent,rgba(200,169,110,0.5),transparent)"
+              : "linear-gradient(90deg,transparent,rgba(239,68,68,0.4),transparent)",
+          }}
+        />
+      </div>
+    );
+  }
+
   // ── Roll Dice ─────────────────────────────────────────────────────────────
   if (msg.eventType === "dice_roll") {
     const roll = payload.diceRoll as number;

@@ -104,14 +104,45 @@ export async function POST(req: Request, { params }: { params: Params }) {
       };
     });
 
-    const narration = await generateTurnNarration({
+    const aiResult = await generateTurnNarration({
       room,
       actions: actionsForAi,
     });
 
-    console.log("narr: ", narration);
+    console.log("AI result: ", aiResult);
+    const isGameOver = aiResult.outcome !== "ongoing";
 
     const data = await db.transaction(async (tx) => {
+      if (isGameOver) {
+        const [aiEvent] = await tx
+          .insert(gameEvents)
+          .values({
+            roomId,
+            turnNumber: room.currentTurn,
+            eventType: "game_end",
+            payload: {
+              reason: aiResult.outcome,
+              title: aiResult.ending!.title,
+              summary: aiResult.ending!.summary,
+              narrative: aiResult.narrative,
+            },
+          })
+          .returning();
+
+        await tx
+          .update(rooms)
+          .set({
+            status: "finished",
+          })
+          .where(eq(rooms.id, roomId));
+
+        return {
+          aiEvent,
+          outcome: aiResult.outcome,
+          nextTurn: room.currentTurn,
+        };
+      }
+
       const [aiEvent] = await tx
         .insert(gameEvents)
         .values({
@@ -119,7 +150,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
           turnNumber: room.currentTurn,
           eventType: "ai_narration",
           payload: {
-            text: narration,
+            text: aiResult.narrative,
           },
         })
         .returning();
@@ -133,6 +164,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
 
       return {
         aiEvent,
+        outcome: aiResult.outcome,
         nextTurn: room.currentTurn + 1,
       };
     });
@@ -143,6 +175,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       data: {
         aiEvent: data.aiEvent,
         nextTurn: data.nextTurn,
+        outcome: data.outcome,
         turnProgress: {
           currentTurn: data.nextTurn,
           submittedCount: 0,

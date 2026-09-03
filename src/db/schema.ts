@@ -41,6 +41,7 @@ export const roomPlayerRoleEnum = pgEnum("room_player_role", [
 
 export const actionTypeEnum = pgEnum("action_sender_type", [
   "ai_narration",
+  "game_end",
   "player_action",
   "dice_roll",
   "combat",

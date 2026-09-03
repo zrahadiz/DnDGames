@@ -1,6 +1,7 @@
-import { RoomContext } from "@/types/rooms";
 import { generateAiResponse } from "@/server/ai/config";
+import { aiTurnResultSchema } from "@/server/validators/ai";
 
+import { RoomContext } from "@/types/rooms";
 import { TurnActionContext } from "@/types/gameEvents";
 
 import { roomContext } from "../contexts/room";
@@ -21,34 +22,50 @@ export async function generateTurnNarration({
     ${gameContext}
 
     Game Language: ${room.language}
-
     Current Turn: ${room.currentTurn}
 
     Player Actions:
     ${JSON.stringify(actions, null, 2)}
 
-    Instructions:    
-    - Limit your responses to 2–3 short paragraphs (maximum ~120 words).
-    - Use the language specified in the Game Language, no matter what the user inputs language.
-    - Resolve all player actions.
-    - Resolve combat actions using the supplied dice roll.
-    - Higher dice rolls should generally result in better outcomes.
-    - Critical successes and failures are allowed.
-    - Determine combat results, damage, injuries, discoveries, and consequences.
-    - Narrate naturally and cinematically.
-    - Mention character names.
-    - Describe NPC reactions.
-    - Continue the story.
-    - Do NOT decide future player actions.
-    - Do NOT speak as a player.
-    - End by presenting the next situation and waiting for player responses.
+    Rules:
+    - Resolve all player actions and combat using the supplied dice rolls.
+    - Higher rolls generally produce better outcomes; critical successes/failures are allowed.
+    - Determine consequences, damage, discoveries, and NPC reactions.
+    - Continue the story naturally and cinematically.
+    - Mention character names when relevant.
+    - Never decide or speak for the players.
+    - End by presenting the next situation.
 
-    Return ONLY valid JSON.
+    Ending:
+    - "victory" when the campaign's startingObjective is successfully completed.
+    - "defeat" when the party suffers an unrecoverable loss.
+    - Otherwise use "ongoing".
+    - Do not end the game based on turn count alone.
+    - If "ongoing", ending must be null.
+    - If "victory" or "defeat", provide a short ending title and summary.
 
+    Keep the narrative to 2–3 short paragraphs, maximum ~120 words.
+    Always respond in the specified language.
+    
+    Return ONLY valid JSON:
+    for an ongoing game: 
     {
-      "narrative": "generated narrative here"
+      "narrative": "string",
+      "outcome": "ongoing",
+      "ending": null
+    }
+
+    For a finished game:
+    {
+      "narrative": "string",
+      "outcome": "victory | defeat",
+      "ending": {
+        "title": "string",
+        "summary": "string"
+      }
     }
     `;
+  // I want to test the finished game, so please provide a response with "victory" outcome with an ending title and summary, no matter what my input is.
 
   console.log("turn Prompt: ", prompt);
 
@@ -56,5 +73,9 @@ export async function generateTurnNarration({
     prompt,
   });
 
-  return response.narrative;
+  const result = aiTurnResultSchema.parse(response);
+
+  console.log("Parsed AI result:", result);
+
+  return result;
 }

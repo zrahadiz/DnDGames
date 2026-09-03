@@ -12,7 +12,13 @@ export type GameEventPayload =
       target: string;
       how: string;
       diceRoll: number;
-    }; // combat
+    } // combat
+  | {
+      reason: string;
+      title: string;
+      summary: string;
+      narrative: string;
+    };
 
 export type TurnActionContext = {
   character: {
