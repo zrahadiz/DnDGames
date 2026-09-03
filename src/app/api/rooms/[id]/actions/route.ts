@@ -50,8 +50,11 @@ export async function GET(req: Request, { params }: { params: Params }) {
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
         ne(gameEvents.eventType, "ai_narration"),
+        ne(gameEvents.eventType, "game_end"),
       ),
     });
+
+    console.log("Submitted Actions:", submittedActions);
 
     const data = await db.query.gameEvents.findMany({
       where: eq(gameEvents.roomId, roomId),
@@ -216,6 +219,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
         ne(gameEvents.eventType, "ai_narration"),
+        ne(gameEvents.eventType, "game_end"),
       ),
     });
 

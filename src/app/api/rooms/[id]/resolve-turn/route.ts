@@ -76,6 +76,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
         ne(gameEvents.eventType, "ai_narration"),
+        ne(gameEvents.eventType, "game_end"),
       ),
     });
 

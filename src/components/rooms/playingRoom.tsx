@@ -28,9 +28,11 @@ interface CombatFormDialogProps {
 export function PlayerSideCard({
   player,
   onKick,
+  isHost,
 }: {
   player: RoomDetail["players"][number];
   onKick?: () => void;
+  isHost: boolean;
 }) {
   const role = player.role ?? "player";
   const hp = player.character?.hp ?? 0;
@@ -51,13 +53,15 @@ export function PlayerSideCard({
       {/* Name row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
-            onClick={onKick}
-          >
-            <X className="text-[#5a4830]" />
-          </Button>
+          {isHost && (
+            <Button
+              variant="ghost"
+              className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+              onClick={onKick}
+            >
+              <X className="text-[#5a4830]" />
+            </Button>
+          )}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <p className="text-[13px] font-cinzel tracking-wide text-[#e8d5a3] truncate">
@@ -137,9 +141,11 @@ export function PlayerSideCard({
 export function MobilePlayerChip({
   player,
   onKick,
+  isHost,
 }: {
   player: RoomDetail["players"][number];
   onKick?: () => void;
+  isHost: boolean;
 }) {
   return (
     <div className="shrink-0 flex items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.12)] bg-[rgba(26,18,8,0.8)] px-3 py-2">
@@ -160,15 +166,17 @@ export function MobilePlayerChip({
           {player.character?.mana ?? "?"}
         </p>
       </div>
-      <span className="ml-auto text-[10px] font-cinzel tracking-wide text-[#8a6f3e]">
-        <Button
-          variant="ghost"
-          className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
-          onClick={onKick}
-        >
-          <X className="text-[#5a4830]" />
-        </Button>
-      </span>
+      {isHost && (
+        <span className="ml-auto text-[10px] font-cinzel tracking-wide text-[#8a6f3e]">
+          <Button
+            variant="ghost"
+            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+            onClick={onKick}
+          >
+            <X className="text-[#5a4830]" />
+          </Button>
+        </span>
+      )}
     </div>
   );
 }

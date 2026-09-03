@@ -7,7 +7,7 @@ import { socket } from "@/lib/socket-client";
 import { toast } from "@/lib/toast";
 import api from "@/lib/axios";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Skull } from "lucide-react";
 
 import DiceRollOverlay from "@/components/feedback/diceOverlay";
 import Loading from "@/components/feedback/loading";
@@ -27,6 +27,7 @@ import {
   GameEventWithRelations,
   TurnProgress,
 } from "@/types/gameEvents";
+import ConfirmationModal from "@/components/feedback/confirmModal";
 
 export default function Room() {
   const { user, fetchUser } = useAuthStore();
@@ -41,6 +42,8 @@ export default function Room() {
   const [turnProgress, setTurnProgress] = useState<TurnProgress | null>(null);
   const [input, setInput] = useState("");
   const [combatDialog, setCombatDialog] = useState(false);
+  const [showEndGameModal, setShowEndGameModal] = useState(false);
+  const [isEndingGame, setIsEndingGame] = useState(false);
 
   const [combatForm, setCombatForm] = useState<CreateCombatInput>({
     target: "",
@@ -63,6 +66,8 @@ export default function Room() {
   const roomId = params.id;
   const router = useRouter();
   const resolvingRef = useRef(false);
+  const isHost = room?.hostId === user?.id;
+  console.log("roomId:", room, "user:", user, "isHost:", isHost);
 
   const fetchRooms = async () => {
     setLoadingState(true);
@@ -170,6 +175,31 @@ export default function Room() {
       }
     } finally {
       resolvingRef.current = false;
+    }
+  };
+
+  const handleEndGame = async () => {
+    try {
+      setIsEndingGame(true);
+      const { data } = await api.post(`/rooms/${roomId}/end-game`, {
+        reason: "abandoned",
+        title: "Adventure Ended",
+        summary: "The host has ended the adventure.",
+      });
+
+      socket.emit("game_event_created", {
+        roomId,
+        event: data.data.gameEndEvent,
+      });
+
+      socket.emit("sync_room_state", {
+        roomId,
+      });
+      setShowEndGameModal(false);
+    } catch (error) {
+      console.error("Failed to end game:", error);
+    } finally {
+      setIsEndingGame(false);
     }
   };
 
@@ -385,6 +415,7 @@ export default function Room() {
                 key={player.id}
                 player={player}
                 onKick={() => kickPlayerHandler(player.userId)}
+                isHost={isHost}
               />
             ))}
           </div>
@@ -511,82 +542,139 @@ export default function Room() {
               className="shrink-0 px-4 py-3 space-y-2.5"
               style={{ borderTop: "1px solid rgba(200,169,110,0.1)" }}
             >
-              {/* Action type buttons */}
-              <div className="flex justify-between items-center flex-wrap">
-                <div className="space-x-3">
-                  <span className="text-[10px] font-cinzel tracking-[0.15em] uppercase text-[#3a2a14]">
-                    Action Type
-                  </span>
-                  <button
-                    type="button"
-                    className="rounded-xl border px-2.5 py-1 text-[11px] font-cinzel tracking-wide transition-all duration-150 cursor-pointer active:scale-95 border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] text-[#d4b87a]"
-                  >
-                    🗣 Speak
-                  </button>
+              {room.status === "finished" ? (
+                /* ── Game finished banner ── */
+                <div className="flex flex-col items-center gap-3 py-4 text-center">
+                  {/* Title */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-cinzel tracking-[0.3em] uppercase text-[#8a6f3e]">
+                      ✦ Adventure Complete ✦
+                    </p>
+                    <p className="text-sm font-serif italic text-[#7a6548]">
+                      This adventure has concluded. No further actions can be
+                      submitted.
+                    </p>
+                  </div>
+
+                  {/* Ornamental divider */}
+                  <div className="flex items-center gap-3 w-full max-w-xs">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[rgba(200,169,110,0.2)]" />
+                    <span className="text-[#5a4830] text-xs">⚔</span>
+                    <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[rgba(200,169,110,0.2)]" />
+                  </div>
+
+                  {/* Actions */}
+                  {/* <div className="flex flex-wrap items-center justify-center gap-2.5">
+                    <button
+                      type="button"
+                      // onClick={onViewSummary}
+                      className="flex items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.35)] bg-[rgba(200,169,110,0.08)] px-4 py-2 text-[12px] font-cinzel tracking-wide text-[#d4b87a] transition-all hover:border-[rgba(200,169,110,0.55)] hover:bg-[rgba(200,169,110,0.14)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    >
+                      <span>📜</span>
+                      View Adventure Summary
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLeaveGame}
+                      className="flex items-center gap-2 rounded-xl border border-[rgba(239,68,68,0.25)] bg-[rgba(153,27,27,0.08)] px-4 py-2 text-[12px] font-cinzel tracking-wide text-[#f87171] transition-all hover:border-[rgba(239,68,68,0.45)] hover:bg-[rgba(153,27,27,0.14)] hover:-translate-y-0.5 active:scale-95 cursor-pointer"
+                    >
+                      <span>🚪</span>
+                      Leave Room
+                    </button>
+                  </div> */}
                 </div>
+              ) : (
+                /* ── Normal input ── */
+                <>
+                  {/* Action type buttons */}
+                  <div className="flex justify-between items-center flex-wrap">
+                    <div className="flex space-x-2 items-center">
+                      <span className="text-[10px] font-cinzel tracking-[0.15em] uppercase text-[#3a2a14]">
+                        Action Type
+                      </span>
+                      {/* Speak button */}
+                      <button
+                        type="button"
+                        className="rounded-xl border px-2.5 py-1 text-[11px] font-cinzel tracking-wide transition-all duration-150 cursor-pointer active:scale-95 border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] text-[#d4b87a]"
+                      >
+                        🗣 Speak
+                      </button>
+                      {/* Combat button */}
+                      <button
+                        type="button"
+                        onClick={() => setCombatDialog(true)}
+                        disabled={isAiThinking}
+                        className=" flex items-center gap-1.5 rounded-xl px-2.5 py-1 border border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.07)] text-[11px] font-cinzel tracking-wide text-[#c4b5fd] transition-all hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] active:scale-95 cursor-pointer"
+                      >
+                        <span className="text-base leading-none">⚔</span>
+                        Combat
+                      </button>
+                    </div>
 
-                <div className="flex space-x-3">
-                  {/* Combat button */}
-                  <button
-                    type="button"
-                    onClick={() => setCombatDialog(true)}
-                    disabled={isAiThinking}
-                    className="ml-auto flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.07)] px-3 py-1.5 text-[11px] font-cinzel tracking-wide text-[#c4b5fd] transition-all hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] active:scale-95 cursor-pointer"
-                  >
-                    <span className="text-base leading-none">⚔</span>
-                    Combat
-                  </button>
+                    <div className="flex space-x-3">
+                      {/* Roll dice button */}
+                      {/* <button
+                        type="button"
+                        onClick={() => {
+                          // setPendingAction("dice_roll");
+                          setDiceOpen(true);
+                        }}
+                        disabled={isAiThinking}
+                        className="ml-auto flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.07)] px-3 py-1.5 text-[11px] font-cinzel tracking-wide text-[#c4b5fd] transition-all hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] active:scale-95 cursor-pointer"
+                      >
+                        <span className="text-base leading-none">🎲</span>
+                        Roll Dice
+                      </button> */}
+                      {isHost && (
+                        <button
+                          type="button"
+                          onClick={() => setShowEndGameModal(true)}
+                          disabled={isAiThinking}
+                          className="ml-auto flex items-center gap-1.5 rounded-xl border border-[rgba(250,139,139,0.25)] bg-[rgba(237,58,58,0.07)] px-3 py-1.5 text-[11px] font-cinzel tracking-wide text-[#fdb5b5] transition-all hover:border-[rgba(250,139,139,0.45)] hover:bg-[rgba(237,58,58,0.12)] active:scale-95 cursor-pointer"
+                        >
+                          <Skull className="h-4 w-4" />
+                          End Adventure
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                  {/* Roll dice button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // setPendingAction("dice_roll");
-                      setDiceOpen(true);
-                    }}
-                    disabled={isAiThinking}
-                    className="ml-auto flex items-center gap-1.5 rounded-xl border border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.07)] px-3 py-1.5 text-[11px] font-cinzel tracking-wide text-[#c4b5fd] transition-all hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] active:scale-95 cursor-pointer"
-                  >
-                    <span className="text-base leading-none">🎲</span>
-                    Roll Dice
-                  </button>
-                </div>
-              </div>
+                  {/* Textarea + submit */}
+                  <div className="flex gap-2 items-end">
+                    <textarea
+                      className="flex-1 rounded-xl border border-[rgba(200,169,110,0.2)] bg-black/30 px-3 py-2.5 text-sm font-serif text-[#e8d5a3] placeholder:text-[#3a2a14] resize-none outline-none focus:border-[rgba(200,169,110,0.45)] transition-colors"
+                      rows={3}
+                      value={input}
+                      disabled={isSubmitting || isAiThinking}
+                      placeholder="Describe your action…"
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey))
+                          submitAction();
+                      }}
+                    />
+                    <button
+                      onClick={submitAction}
+                      disabled={isSubmitting || !input.trim() || isAiThinking}
+                      className="shrink-0 rounded-xl border border-[rgba(200,169,110,0.35)] px-4 py-2.5 text-[13px] font-cinzel tracking-wide text-[#e8d5a3] transition-all hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer"
+                      style={{
+                        background: "linear-gradient(135deg,#3d2e10,#2a1f0a)",
+                        boxShadow: "0 0 16px rgba(200,169,110,0.1)",
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-[rgba(200,169,110,0.3)] border-t-[#c8a96e] animate-spin" />
+                      ) : (
+                        "Act"
+                      )}
+                    </button>
+                  </div>
 
-              {/* Textarea + submit */}
-              <div className="flex gap-2 items-end">
-                <textarea
-                  className="flex-1 rounded-xl border border-[rgba(200,169,110,0.2)] bg-black/30 px-3 py-2.5 text-sm font-serif text-[#e8d5a3] placeholder:text-[#3a2a14] resize-none outline-none focus:border-[rgba(200,169,110,0.45)] transition-colors"
-                  rows={3}
-                  value={input}
-                  disabled={isSubmitting || isAiThinking}
-                  placeholder="Describe your action…"
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey))
-                      submitAction();
-                  }}
-                />
-                <button
-                  onClick={submitAction}
-                  disabled={isSubmitting || !input.trim() || isAiThinking}
-                  className="shrink-0 rounded-xl border border-[rgba(200,169,110,0.35)] px-4 py-2.5 text-[13px] font-cinzel tracking-wide text-[#e8d5a3] transition-all hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:translate-y-0 cursor-pointer"
-                  style={{
-                    background: "linear-gradient(135deg,#3d2e10,#2a1f0a)",
-                    boxShadow: "0 0 16px rgba(200,169,110,0.1)",
-                  }}
-                >
-                  {isSubmitting ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-[rgba(200,169,110,0.3)] border-t-[#c8a96e] animate-spin" />
-                  ) : (
-                    "Act"
-                  )}
-                </button>
-              </div>
-
-              <p className="text-[10px] font-serif italic text-[#3a2a14]">
-                Ctrl + Enter to submit
-              </p>
+                  <p className="text-[10px] font-serif italic text-[#3a2a14]">
+                    Ctrl + Enter to submit
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Gold bottom bar */}
@@ -606,6 +694,7 @@ export default function Room() {
                 key={player.id}
                 player={player}
                 onKick={() => kickPlayerHandler(player.userId)}
+                isHost={isHost}
               />
             ))}
           </div>
@@ -618,6 +707,7 @@ export default function Room() {
               key={player.id}
               player={player}
               onKick={() => kickPlayerHandler(player.userId)}
+              isHost={isHost}
             />
           ))}
         </div>
@@ -633,6 +723,24 @@ export default function Room() {
           </Button>
         </div>
       </div>
+
+      {showEndGameModal && (
+        <ConfirmationModal
+          title="End Adventure?"
+          description={
+            <>
+              Are you sure you want to end this adventure? Abandon this quest?
+              Players will no longer be able to submit actions.
+            </>
+          }
+          cancelLabel="Continue Adventure"
+          confirmLabel="End Adventure"
+          variant="danger"
+          onClose={() => setShowEndGameModal(false)}
+          onConfirm={handleEndGame}
+          isLoading={isEndingGame}
+        />
+      )}
 
       <CombatDialog
         open={combatDialog}

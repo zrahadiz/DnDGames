@@ -19,6 +19,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
       where: eq(rooms.id, id),
       columns: {
         id: true,
+        hostId: true,
         name: true,
         status: true,
       },
@@ -53,6 +54,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
       message: "Room fetched successfully",
       data: {
         id: room.id,
+        hostId: room.hostId,
         name: room.name,
         status: room.status,
         campaign: room.campaign,

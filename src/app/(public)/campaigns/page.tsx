@@ -7,7 +7,6 @@ import api from "@/lib/axios";
 import CampaignCard from "@/components/campaigns/campaignCard";
 import CampaignModal from "@/components/campaigns/campaignModal";
 import { PlusIcon, SearchIcon } from "lucide-react";
-import DeleteModal from "@/components/campaigns/deleteModal";
 import { ThemeSelector } from "@/components/forms/themeSelector";
 import { ThemeOption } from "@/types/theme";
 import { useAuthStore } from "@/stores/auth-store";
@@ -25,6 +24,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import ConfirmationModal from "@/components/feedback/confirmModal";
 
 export default function CampaignsPage() {
   const router = useRouter();
@@ -146,18 +146,14 @@ export default function CampaignsPage() {
     }
   };
 
-  const deleteCampaign = async ({
-    campaign,
-  }: {
-    campaign: CampaignWithRelations;
-  }) => {
+  const deleteCampaign = async (campaign: CampaignWithRelations) => {
     setLoadingState(true);
     setLoadingText("Deleting Campaign...");
     try {
       await api.delete(`/campaigns/${campaign.id}`);
       setDeleteTarget(null);
-      getCampaigns();
-      toast("Campaign Deleted successfully", {
+      await getCampaigns();
+      toast("Campaign deleted successfully", {
         type: "success",
         position: "top-center",
         duration: 5000,
@@ -252,7 +248,9 @@ export default function CampaignsPage() {
                     isOwner={c.createdBy === user?.id}
                     onEdit={setEditTarget}
                     onDelete={setDeleteTarget}
-                    onPlay={(c) => router.push(`/rooms/create?campaignId=${c.id}`)}
+                    onPlay={(c) =>
+                      router.push(`/rooms/create?campaignId=${c.id}`)
+                    }
                   />
                 ))}
               </div>
@@ -339,10 +337,20 @@ export default function CampaignsPage() {
         />
       )}
       {deleteTarget && (
-        <DeleteModal
-          campaign={deleteTarget}
+        <ConfirmationModal
+          title="Delete Campaign?"
+          description={
+            <>
+              <span style={{ color: "#f87171" }}>{deleteTarget.title}</span>{" "}
+              will be permanently erased from the realm. This cannot be undone.
+            </>
+          }
+          cancelLabel="Keep It"
+          confirmLabel="Destroy"
+          variant="danger"
           onClose={() => setDeleteTarget(null)}
-          onConfirm={deleteCampaign}
+          onConfirm={() => deleteCampaign(deleteTarget)}
+          isLoading={loadingState}
         />
       )}
     </>
