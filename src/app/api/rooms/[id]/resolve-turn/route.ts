@@ -72,6 +72,12 @@ export async function POST(req: Request, { params }: { params: Params }) {
       });
     }
 
+    const activePlayers = room.players.filter(
+      (player) => player.character && player.character.hp > 0,
+    );
+
+    const totalPlayers = activePlayers.length;
+
     const submittedActions = await db.query.gameEvents.findMany({
       where: and(
         eq(gameEvents.roomId, roomId),
@@ -81,7 +87,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       ),
     });
 
-    if (submittedActions.length < room.players.length) {
+    if (submittedActions.length < totalPlayers) {
       return apiResponse(400, {
         success: false,
         message: "Not all players have submitted actions",
@@ -200,8 +206,8 @@ export async function POST(req: Request, { params }: { params: Params }) {
         turnProgress: {
           currentTurn: data.nextTurn,
           submittedCount: 0,
-          totalPlayers: room.players.length,
-          remainingCount: room.players.length,
+          totalPlayers,
+          remainingCount: totalPlayers,
           allPlayersSubmitted: false,
         },
       },

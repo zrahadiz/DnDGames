@@ -14,6 +14,7 @@ export async function generateTurnNarration({
   actions: TurnActionContext[];
 }) {
   const gameContext = await roomContext(room);
+  console.log("Game context for AI:", gameContext);
 
   const prompt = `
   You are the Dungeon Master of a tabletop RPG.

@@ -20,7 +20,11 @@ export async function GET(req: Request, { params }: { params: Params }) {
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
       with: {
-        players: true,
+        players: {
+          with: {
+            character: true,
+          },
+        },
       },
     });
 
@@ -69,15 +73,22 @@ export async function GET(req: Request, { params }: { params: Params }) {
       orderBy: (gameEvents, { asc }) => [asc(gameEvents.createdAt)],
     });
 
-    const submittedPlayerIds = new Set(
-      submittedActions.map((action) => action.roomPlayerId),
+    const activePlayers = room.players.filter(
+      (player) => player.character && player.character.hp > 0,
     );
 
-    const remainingPlayers = room.players.filter(
+    const totalPlayers = activePlayers.length;
+
+    const submittedPlayerIds = new Set(
+      submittedActions.map((event) => event.roomPlayerId).filter(Boolean),
+    );
+
+    const remainingPlayers = activePlayers.filter(
       (player) => !submittedPlayerIds.has(player.id),
     );
 
-    const allPlayersSubmitted = remainingPlayers.length === 0;
+    const allPlayersSubmitted =
+      activePlayers.length > 0 && remainingPlayers.length === 0;
 
     return apiResponse(200, {
       success: true,
@@ -87,7 +98,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
         turnProgress: {
           currentTurn: room.currentTurn,
           submittedCount: submittedActions.length,
-          totalPlayers: room.players.length,
+          totalPlayers,
           remainingCount: remainingPlayers.length,
           allPlayersSubmitted,
         },
@@ -128,7 +139,11 @@ export async function POST(req: Request, { params }: { params: Params }) {
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
       with: {
-        players: true,
+        players: {
+          with: {
+            character: true,
+          },
+        },
       },
     });
 
@@ -223,15 +238,22 @@ export async function POST(req: Request, { params }: { params: Params }) {
       ),
     });
 
-    const submittedPlayerIds = new Set(
-      submittedActions.map((action) => action.roomPlayerId),
+    const activePlayers = room.players.filter(
+      (player) => player.character && player.character.hp > 0,
     );
 
-    const remainingPlayers = room.players.filter(
+    const totalPlayers = activePlayers.length;
+
+    const submittedPlayerIds = new Set(
+      submittedActions.map((event) => event.roomPlayerId).filter(Boolean),
+    );
+
+    const remainingPlayers = activePlayers.filter(
       (player) => !submittedPlayerIds.has(player.id),
     );
 
-    const allPlayersSubmitted = remainingPlayers.length === 0;
+    const allPlayersSubmitted =
+      activePlayers.length > 0 && remainingPlayers.length === 0;
 
     return apiResponse(201, {
       success: true,
@@ -251,7 +273,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         turnProgress: {
           currentTurn: room.currentTurn,
           submittedCount: submittedActions.length,
-          totalPlayers: room.players.length,
+          totalPlayers,
           remainingCount: remainingPlayers.length,
           allPlayersSubmitted,
         },

@@ -67,7 +67,6 @@ export default function Room() {
   const router = useRouter();
   const resolvingRef = useRef(false);
   const isHost = room?.hostId === user?.id;
-  console.log("roomId:", room, "user:", user, "isHost:", isHost);
 
   const fetchRooms = async () => {
     setLoadingState(true);
@@ -362,6 +361,9 @@ export default function Room() {
     );
   }
 
+  const currentPlayer = room.players.find((p) => p.userId === user?.id);
+  const isDefeated = (currentPlayer?.character?.hp ?? 0) <= 0;
+
   const half = Math.ceil(room.players.length / 2);
   const leftPlayers = room.players.slice(0, half);
   const rightPlayers = room.players.slice(half);
@@ -582,6 +584,27 @@ export default function Room() {
                       Leave Room
                     </button>
                   </div> */}
+                </div>
+              ) : isDefeated ? (
+                <div className="flex flex-col items-center gap-3 py-4 text-center">
+                  {/* Title */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-cinzel tracking-[0.3em] uppercase text-[#8a6f3e]">
+                      ✦ You Have Been Defeated ✦
+                    </p>
+                    <p className="text-sm font-serif italic text-[#7a6548]">
+                      Your character has fallen in battle. You can no longer
+                      submit actions, but you can still watch the adventure
+                      unfold or wait for revival.
+                    </p>
+                  </div>
+
+                  {/* Ornamental divider */}
+                  <div className="flex items-center gap-3 w-full max-w-xs">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[rgba(200,169,110,0.2)]" />
+                    <span className="text-[#5a4830] text-xs">⚔</span>
+                    <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[rgba(200,169,110,0.2)]" />
+                  </div>
                 </div>
               ) : (
                 /* ── Normal input ── */
