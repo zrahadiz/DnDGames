@@ -3,6 +3,7 @@ import { gameEvents, rooms } from "@/db/schema";
 import { generateTurnNarration } from "@/server/ai/service/generateTurnNarration";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
+import { applyCharacterEffects } from "@/server/game/applyCharacterEffects";
 import { apiResponse } from "@/server/utils/apiResponse";
 import { eq, ne, and } from "drizzle-orm";
 
@@ -30,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
             description: true,
             backgroundLore: true,
             startingLocation: true,
-            startingObjective: true,
+            mainObjective: true,
             worldSetup: true,
           },
         },
@@ -93,11 +94,16 @@ export async function POST(req: Request, { params }: { params: Params }) {
       return {
         character: player?.character
           ? {
+              id: player.character.id,
               name: player.character.name,
               race: player.character.race,
               characterClass: player.character.characterClass,
               level: player.character.level,
+              xp: player.character.xp,
+              hp: player.character.hp,
+              maxHp: player.character.maxHp,
               mana: player.character.mana,
+              maxMana: player.character.maxMana,
             }
           : null,
         eventType: action.eventType,
@@ -113,7 +119,18 @@ export async function POST(req: Request, { params }: { params: Params }) {
     console.log("AI result: ", aiResult);
     const isGameOver = aiResult.outcome !== "ongoing";
 
+    const allowedCharacterIds = new Set(
+      room.players
+        .map((player) => player.character?.id)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    const safeEffects = aiResult.characterEffects.filter((effect) =>
+      allowedCharacterIds.has(effect.characterId),
+    );
+
     const data = await db.transaction(async (tx) => {
+      const updatedCharacters = await applyCharacterEffects(tx, safeEffects);
       if (isGameOver) {
         const [aiEvent] = await tx
           .insert(gameEvents)
@@ -140,6 +157,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         return {
           aiEvent,
           outcome: aiResult.outcome,
+          updatedCharacters,
           nextTurn: room.currentTurn,
         };
       }
@@ -166,6 +184,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       return {
         aiEvent,
         outcome: aiResult.outcome,
+        updatedCharacters,
         nextTurn: room.currentTurn + 1,
       };
     });
@@ -177,6 +196,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         aiEvent: data.aiEvent,
         nextTurn: data.nextTurn,
         outcome: data.outcome,
+        updatedCharacters: data.updatedCharacters,
         turnProgress: {
           currentTurn: data.nextTurn,
           submittedCount: 0,

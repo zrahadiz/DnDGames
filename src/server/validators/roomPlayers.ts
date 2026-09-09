@@ -28,7 +28,5 @@ export const joinRoomSchema = z.object({
     race: z.string().min(1).max(50),
 
     characterClass: z.string().min(1).max(50),
-
-    backstory: z.string().optional(),
   }),
 });

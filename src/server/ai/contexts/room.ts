@@ -12,7 +12,7 @@ export async function roomContext(roomDetail: RoomContext) {
       description: roomDetail.campaign.description,
       backgroundLore: roomDetail.campaign.backgroundLore,
       startingLocation: roomDetail.campaign.startingLocation,
-      startingObjective: roomDetail.campaign.startingObjective,
+      mainObjective: roomDetail.campaign.mainObjective,
       worldSetup: roomDetail.campaign.worldSetup,
     },
 
@@ -24,9 +24,11 @@ export async function roomContext(roomDetail: RoomContext) {
         race: player.character?.race,
         class: player.character?.characterClass,
         level: player.character?.level,
+        xp: player.character?.xp,
         hp: player.character?.hp,
+        maxHp: player.character?.maxHp,
         mana: player.character?.mana,
-        backstory: player.character?.backstory,
+        maxMana: player.character?.maxMana,
       },
     })),
   };

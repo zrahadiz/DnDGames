@@ -35,10 +35,13 @@ export function PlayerSideCard({
   isHost: boolean;
 }) {
   const role = player.role ?? "player";
+  const level = player.character?.level ?? 1;
+  const xp = player.character?.xp ?? 0;
   const hp = player.character?.hp ?? 0;
+  const maxHp = player.character?.maxHp ?? 0;
   const mana = player.character?.mana ?? 0;
-  const maxHp = player.character?.hp ?? hp;
-  const maxMana = player.character?.mana ?? mana;
+  const maxMana = player.character?.maxMana ?? 0;
+  const xpPct = level * 100 > 0 ? Math.round((xp / (level * 100)) * 100) : 100;
   const hpPct = maxHp > 0 ? Math.round((hp / maxHp) * 100) : 100;
   const manaPct = maxMana > 0 ? Math.round((mana / maxMana) * 100) : 100;
 
@@ -87,9 +90,31 @@ export function PlayerSideCard({
 
       {/* Level */}
       <div className="flex items-center justify-between text-[10px] font-cinzel tracking-wide">
-        <span className="text-[#8a6f3e]">
-          Level {player.character?.level ?? 1}
-        </span>
+        <span className="text-[#8a6f3e]">Level {level}</span>
+      </div>
+
+      {/* XP bar */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[10px] font-cinzel tracking-wide text-[#5a4830]">
+          <span>XP</span>
+          <span>
+            {xp} / {level * 100}
+          </span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-black/40 border border-[rgba(239,68,68,0.1)] overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${xpPct}%`,
+              background:
+                xpPct > 50
+                  ? "linear-gradient(90deg,#16a34a,#4ade80)"
+                  : hpPct > 25
+                    ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                    : "linear-gradient(90deg,#991b1b,#f87171)",
+            }}
+          />
+        </div>
       </div>
 
       {/* HP bar */}

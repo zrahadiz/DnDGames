@@ -16,55 +16,73 @@ export async function generateTurnNarration({
   const gameContext = await roomContext(room);
 
   const prompt = `
-    You are the Dungeon Master of a tabletop RPG.
+  You are the Dungeon Master of a tabletop RPG.
 
-    Current Campaign Context:
-    ${gameContext}
+  Campaign:
+  ${gameContext}
 
-    Game Language: ${room.language}
-    Current Turn: ${room.currentTurn}
+  Language: ${room.language}
+  Turn: ${room.currentTurn}
 
-    Player Actions:
-    ${JSON.stringify(actions, null, 2)}
+  Player Actions:
+  ${JSON.stringify(actions, null, 2)}
 
-    Rules:
-    - Resolve all player actions and combat using the supplied dice rolls.
-    - Higher rolls generally produce better outcomes; critical successes/failures are allowed.
-    - Determine consequences, damage, discoveries, and NPC reactions.
-    - Continue the story naturally and cinematically.
-    - Mention character names when relevant.
-    - Never decide or speak for the players.
-    - End by presenting the next situation.
+  Rules:
+  - Resolve all actions using the supplied dice rolls.
+  - Higher rolls generally give better results; critical successes/failures are allowed.
+  - Describe consequences, combat, discoveries, and NPC reactions naturally.
+  - Mention character names when relevant.
+  - Never choose actions or dialogue for players.
+  - End ongoing narration with the next situation.
 
-    Ending:
-    - "victory" when the campaign's startingObjective is successfully completed.
-    - "defeat" when the party suffers an unrecoverable loss.
-    - Otherwise use "ongoing".
-    - Do not end the game based on turn count alone.
-    - If "ongoing", ending must be null.
-    - If "victory" or "defeat", provide a short ending title and summary.
+  Character Effects:
+  - Return only effects that actually happen this turn.
+  - Use only character IDs provided in the context.
+  - Allowed effects:
+    - "damage": lose HP
+    - "heal": restore HP
+    - "mana_cost": spend mana
+    - "mana_restore": restore mana
+    - "xp": gain experience
+  - A character may receive multiple different effects in the same turn.
+  - Combine duplicate effect types for the same character when possible.
+  - Return effect amounts only, never final HP, mana, XP, or level values.
+  - HP/mana effects must be 1–50.
+  - XP should normally be 5–30.
 
-    Keep the narrative to 2–3 short paragraphs, maximum ~120 words.
-    Always respond in the specified language.
-    
-    Return ONLY valid JSON:
-    for an ongoing game: 
-    {
-      "narrative": "string",
-      "outcome": "ongoing",
-      "ending": null
-    }
+  Outcome:
+  - "victory" if the campaign startingObjective is completed.
+  - "defeat" if the party suffers an unrecoverable loss.
+  - Otherwise use "ongoing".
+  - Never end the game because of turn count.
+  - If ongoing, ending must be null.
+  - If victory or defeat, provide an ending title and summary.
 
-    For a finished game:
-    {
-      "narrative": "string",
-      "outcome": "victory | defeat",
-      "ending": {
-        "title": "string",
-        "summary": "string"
+  Keep narrative to 2–3 short paragraphs, maximum ~120 words.
+  Always use the specified language.
+
+  Return ONLY valid JSON:
+
+  {
+    "narrative": "string",
+    "outcome": "ongoing | victory | defeat",
+    "characterEffects": [
+      {
+        "characterId": "uuid",
+        "type": "damage | heal | mana_cost | mana_restore | xp",
+        "amount": 10
       }
-    }
-    `;
+    ],
+    "ending": null
+  }
+
+  If outcome is "victory" or "defeat", ending must be:
+
+  {
+    "title": "string",
+    "summary": "string"
+  }
+  `;
   // I want to test the finished game, so please provide a response with "victory" outcome with an ending title and summary, no matter what my input is.
 
   console.log("turn Prompt: ", prompt);

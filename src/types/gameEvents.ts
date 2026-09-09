@@ -22,11 +22,16 @@ export type GameEventPayload =
 
 export type TurnActionContext = {
   character: {
+    id: string;
     name: string;
     race: string | null;
     characterClass: string | null;
     level: number;
+    xp: number;
+    hp: number;
+    maxHp: number;
     mana: number;
+    maxMana: number;
   } | null;
   eventType: string;
   payload: GameEventPayload;
@@ -48,6 +53,15 @@ export type TurnProgress = {
 export type GameEventWithRelations = GameEvent & {
   characters: Pick<
     Characters,
-    "id" | "name" | "race" | "characterClass" | "level" | "hp" | "mana"
+    | "id"
+    | "name"
+    | "race"
+    | "characterClass"
+    | "level"
+    | "xp"
+    | "hp"
+    | "maxHp"
+    | "mana"
+    | "maxMana"
   > | null;
 };
