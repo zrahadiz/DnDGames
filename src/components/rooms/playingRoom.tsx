@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import { X } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Volume2, VolumeOff, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "@/lib/toast";
 
 interface CombatFormDialogProps {
   open: boolean;
@@ -497,6 +498,90 @@ export function CombatDialog({
 export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
   const payload = msg.payload as Record<string, unknown>;
   const characterName = msg.characters?.name ?? "Unknown";
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(
+    null,
+  );
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const handleSpeak = (messageId: string, text: string) => {
+    console.log("Starting speech synthesis...", messageId);
+
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      toast("Text-to-speech is not supported.", {
+        type: "error",
+      });
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    utteranceRef.current = utterance;
+
+    utterance.rate = 0.95;
+    utterance.pitch = 0.9;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+
+    const preferredVoice =
+      voices.find(
+        (voice) =>
+          voice.lang.startsWith("en") &&
+          (voice.name.includes("Natural") ||
+            voice.name.includes("Neural") ||
+            voice.name.includes("Microsoft")),
+      ) ?? voices.find((voice) => voice.lang.startsWith("en"));
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      setSpeakingMessageId(messageId);
+    };
+
+    utterance.onend = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      utteranceRef.current = null;
+      setSpeakingMessageId(null);
+    };
+
+    utterance.onerror = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      utteranceRef.current = null;
+      setSpeakingMessageId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStop = () => {
+    console.log("Stopping speech synthesis...");
+
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      return;
+    }
+
+    utteranceRef.current = null;
+
+    window.speechSynthesis.cancel();
+
+    setSpeakingMessageId(null);
+  };
+
+  const isThisMessageSpeaking = speakingMessageId === msg.id;
 
   // ── AI Narration ──────────────────────────────────────────────────────────
   if (msg.eventType === "ai_narration") {
@@ -514,6 +599,35 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
         <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif italic text-[#b8a8d8]">
           {String(payload.text ?? "")}
         </p>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-[rgba(125,64,230,0.07)] text-[#b8a8d8] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#d0c3e9] transition-all duration-150 cursor-pointer"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              console.log(
+                "pointer down",
+                isThisMessageSpeaking ? "STOP" : "PLAY",
+              );
+
+              if (isThisMessageSpeaking) {
+                handleStop();
+              } else {
+                handleSpeak(msg.id, String(payload.text ?? ""));
+              }
+            }}
+            onClick={(e) => {
+              // Important:
+              // don't play/stop anything here.
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {isThisMessageSpeaking ? <VolumeOff /> : <Volume2 />}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -534,6 +648,35 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
         <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif text-[#9a8878]">
           {String(payload.text ?? "")}
         </p>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              console.log(
+                "pointer down",
+                isThisMessageSpeaking ? "STOP" : "PLAY",
+              );
+
+              if (isThisMessageSpeaking) {
+                handleStop();
+              } else {
+                handleSpeak(msg.id, String(payload.text ?? ""));
+              }
+            }}
+            onClick={(e) => {
+              // Important:
+              // don't play/stop anything here.
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {isThisMessageSpeaking ? <VolumeOff /> : <Volume2 />}
+          </Button>
+        </div>
       </div>
     );
   }
