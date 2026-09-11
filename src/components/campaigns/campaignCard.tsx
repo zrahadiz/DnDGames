@@ -145,7 +145,7 @@ export default function CampaignCard({
         >
           <p className="m-0 font-serif text-xs italic text-[#9a85c4] line-clamp-2">
             <span className="text-[#6a5490]">Objective:</span>
-            {campaign.startingObjective}
+            {campaign.mainObjective}
           </p>
         </div>
 

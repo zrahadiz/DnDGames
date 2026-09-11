@@ -189,6 +189,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
         eq(gameEvents.roomPlayerId, membership.id),
         eq(gameEvents.turnNumber, room.currentTurn),
         ne(gameEvents.eventType, "ai_narration"),
+        ne(gameEvents.eventType, "game_end"),
       ),
     });
 
@@ -199,23 +200,27 @@ export async function POST(req: Request, { params }: { params: Params }) {
       });
     }
 
-    let eventType: "player_action" | "combat";
+    const eventType = parsed.data.eventType;
     let payload: GameEventPayload;
 
-    if (parsed.data.eventType === "player_action") {
-      eventType = "player_action";
+    switch (eventType) {
+      case "player_action":
+        payload = {
+          text: parsed.data.action,
+        };
+        break;
 
-      payload = {
-        text: parsed.data.action,
-      };
-    } else {
-      eventType = "combat";
+      case "skip_turn":
+        payload = {};
+        break;
 
-      payload = {
-        target: parsed.data.target,
-        how: parsed.data.how,
-        diceRoll: parsed.data.diceRoll,
-      };
+      case "combat":
+        payload = {
+          target: parsed.data.target,
+          how: parsed.data.how,
+          diceRoll: parsed.data.diceRoll,
+        };
+        break;
     }
 
     const [actionEvent] = await db

@@ -18,7 +18,8 @@ export type GameEventPayload =
       title: string;
       summary: string;
       narrative: string;
-    };
+    }
+  | Record<string, never>;
 
 export type TurnActionContext = {
   character: {

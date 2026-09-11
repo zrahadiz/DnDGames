@@ -35,6 +35,8 @@ export async function generateTurnNarration({
   - Mention character names when relevant.
   - Never choose actions or dialogue for players.
   - End ongoing narration with the next situation.
+  - "skip_turn" means the character deliberately takes no action this turn.
+  - Do not invent an action for a character who skipped.
 
   Character Effects:
   - Return only effects that actually happen this turn.
@@ -52,7 +54,7 @@ export async function generateTurnNarration({
   - XP should normally be 5–30.
 
   Outcome:
-  - "victory" if the campaign startingObjective is completed.
+  - "victory" if the campaign mainObjective is completed.
   - "defeat" if the party suffers an unrecoverable loss.
   - Otherwise use "ongoing".
   - Never end the game because of turn count.

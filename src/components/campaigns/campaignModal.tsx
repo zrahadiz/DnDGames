@@ -52,7 +52,7 @@ export default function CampaignModal({
     theme: campaign?.theme ?? null,
     description: campaign?.description ?? "",
     backgroundLore: campaign?.backgroundLore ?? "",
-    startingObjective: campaign?.startingObjective ?? "",
+    mainObjective: campaign?.mainObjective ?? "",
     startingLocation: campaign?.startingLocation ?? "",
     worldSetup: campaign?.worldSetup
       ? Object.entries(campaign.worldSetup).map(([key, value], index) => ({
@@ -215,19 +215,6 @@ export default function CampaignModal({
                 </div>
 
                 <div className="sm:col-span-2">
-                  <FieldLabel>Starting Objective</FieldLabel>
-                  <textarea
-                    className={`${inputCls} resize-none`}
-                    rows={2}
-                    value={form.startingObjective}
-                    onChange={(e) =>
-                      setField("startingObjective", e.target.value)
-                    }
-                    placeholder="What must the party accomplish first?"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
                   <FieldLabel>Starting Location</FieldLabel>
                   <textarea
                     className={`${inputCls} resize-none`}
@@ -237,6 +224,17 @@ export default function CampaignModal({
                       setField("startingLocation", e.target.value)
                     }
                     placeholder="Where the party first summoned?"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <FieldLabel>Main Objective</FieldLabel>
+                  <textarea
+                    className={`${inputCls} resize-none`}
+                    rows={2}
+                    value={form.mainObjective}
+                    onChange={(e) => setField("mainObjective", e.target.value)}
+                    placeholder="What must the party accomplish to complete the dungeon?"
                   />
                 </div>
 
@@ -314,7 +312,7 @@ export default function CampaignModal({
               </div>
 
               {/* Publish toggle */}
-              <div className="flex items-center gap-3">
+              {/* <div className="flex items-center gap-3">
                 <button
                   type="button"
                   role="switch"
@@ -341,7 +339,7 @@ export default function CampaignModal({
                 <span className="text-sm italic font-serif text-[#8a6f3e]">
                   Publish to community
                 </span>
-              </div>
+              </div> */}
             </div>
           </div>
 

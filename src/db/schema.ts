@@ -45,6 +45,7 @@ export const actionTypeEnum = pgEnum("action_sender_type", [
   "player_action",
   "dice_roll",
   "combat",
+  "skip_turn",
 ]);
 
 export const messageSenderTypeEnum = pgEnum("message_sender_type", [

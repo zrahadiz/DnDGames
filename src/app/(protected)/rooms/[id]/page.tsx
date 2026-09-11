@@ -7,7 +7,7 @@ import { socket } from "@/lib/socket-client";
 import { toast } from "@/lib/toast";
 import api from "@/lib/axios";
 
-import { LogOut, Skull } from "lucide-react";
+import { FastForward, LogOut, Skull, Speech, Swords } from "lucide-react";
 
 import DiceRollOverlay from "@/components/feedback/diceOverlay";
 import Loading from "@/components/feedback/loading";
@@ -43,6 +43,7 @@ export default function Room() {
   const [input, setInput] = useState("");
   const [combatDialog, setCombatDialog] = useState(false);
   const [showEndGameModal, setShowEndGameModal] = useState(false);
+  const [showSkipModal, setShowSkipModal] = useState(false);
   const [isEndingGame, setIsEndingGame] = useState(false);
 
   const [combatForm, setCombatForm] = useState<CreateCombatInput>({
@@ -96,6 +97,13 @@ export default function Room() {
       setLoadingState(false);
       setLoadingText("");
     }
+  };
+
+  const handleSkipTurn = async () => {
+    await submitGameEvent({
+      eventType: "skip_turn",
+    });
+    setShowSkipModal(false);
   };
 
   const submitAction = async () => {
@@ -618,9 +626,10 @@ export default function Room() {
                       {/* Speak button */}
                       <button
                         type="button"
-                        className="rounded-xl border px-2.5 py-1 text-[11px] font-cinzel tracking-wide transition-all duration-150 cursor-pointer active:scale-95 border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] text-[#d4b87a]"
+                        className="flex items-center gap-1.5 rounded-xl px-2.5 py-1 border text-[11px] font-cinzel tracking-wide border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] text-[#d4b87a]"
                       >
-                        🗣 Speak
+                        <Speech className="h-4 w-4" />
+                        Speak
                       </button>
                       {/* Combat button */}
                       <button
@@ -629,8 +638,17 @@ export default function Room() {
                         disabled={isAiThinking}
                         className=" flex items-center gap-1.5 rounded-xl px-2.5 py-1 border border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.07)] text-[11px] font-cinzel tracking-wide text-[#c4b5fd] transition-all hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] active:scale-95 cursor-pointer"
                       >
-                        <span className="text-base leading-none">⚔</span>
+                        <Swords className="h-4 w-4" />
                         Combat
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSkipModal(true)}
+                        disabled={isSubmitting || isAiThinking}
+                        className=" flex items-center gap-1.5 rounded-xl px-2.5 py-1 border border-[rgba(139,250,163,0.25)] bg-[rgba(58,237,213,0.07)] text-[11px] font-cinzel tracking-wide text-[#c9fdb5] transition-all hover:border-[rgba(157,250,139,0.45)] hover:bg-[rgba(79,237,58,0.12)] active:scale-95 cursor-pointer"
+                      >
+                        <FastForward className="h-4 w-4" />
+                        Skip Turn
                       </button>
                     </div>
 
@@ -762,6 +780,23 @@ export default function Room() {
           onClose={() => setShowEndGameModal(false)}
           onConfirm={handleEndGame}
           isLoading={isEndingGame}
+        />
+      )}
+
+      {showSkipModal && (
+        <ConfirmationModal
+          title="Skip This Turn?"
+          description={
+            <>
+              Your character will take no action this turn. You cannot submit
+              another action until the next turn.
+            </>
+          }
+          cancelLabel="Go Back"
+          confirmLabel="Skip Turn"
+          onClose={() => setShowSkipModal(false)}
+          onConfirm={handleSkipTurn}
+          isLoading={isSubmitting}
         />
       )}
 

@@ -681,6 +681,16 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
     );
   }
 
+  if (msg.eventType === "skip_turn") {
+    return (
+      <div className="flex items-center gap-2 py-1.5 text-[11px] font-serif italic text-[#6f6658]">
+        <span>⏭</span>
+
+        <span>{msg.characters?.name ?? "Player"} chose to wait this turn.</span>
+      </div>
+    );
+  }
+
   // ── Combat ────────────────────────────────────────────────────────────────
   if (msg.eventType === "combat") {
     const roll = payload.diceRoll as number;
