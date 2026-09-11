@@ -21,7 +21,7 @@ export type CampaignForm = {
   title: string;
   description: string;
   backgroundLore: string;
-  startingObjective: string;
+  mainObjective: string;
   startingLocation: string;
   isOfficial: boolean;
   theme: ThemeOption | null;

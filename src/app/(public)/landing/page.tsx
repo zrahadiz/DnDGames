@@ -93,7 +93,7 @@ const steps = [
   {
     num: "III",
     title: "Build Your Hero",
-    desc: "Choose your race, class, and backstory. The AI weaves your history into the living world around you.",
+    desc: "Choose your race and class. The AI weaves your history into the living world around you.",
   },
   {
     num: "IV",

@@ -88,7 +88,6 @@ export default function Home() {
       name: "",
       race: "",
       characterClass: "",
-      backstory: "",
     },
   });
 

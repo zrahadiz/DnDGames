@@ -111,11 +111,11 @@ export default function CampaignRowCard({
             )}
 
             {/* Starting objective */}
-            {campaign.startingObjective && (
+            {campaign.mainObjective && (
               <div className="space-y-1">
                 <CustomFieldLabel>Starting Objective</CustomFieldLabel>
                 <p className="text-xs font-serif text-[#6a5838] leading-relaxed">
-                  {campaign.startingObjective}
+                  {campaign.mainObjective}
                 </p>
               </div>
             )}

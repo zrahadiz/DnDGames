@@ -31,4 +31,8 @@ export const submitActionSchema = z.discriminatedUnion("eventType", [
     how: z.string(),
     diceRoll: z.int(),
   }),
+
+  z.object({
+    eventType: z.literal("skip_turn"),
+  }),
 ]);

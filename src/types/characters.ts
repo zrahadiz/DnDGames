@@ -19,3 +19,30 @@ export interface CharacterSuggestions {
   races: RaceSuggestion[];
   classes: ClassSuggestion[];
 }
+
+export type CharacterEffect =
+  | {
+      characterId: string;
+      type: "damage";
+      amount: number;
+    }
+  | {
+      characterId: string;
+      type: "heal";
+      amount: number;
+    }
+  | {
+      characterId: string;
+      type: "mana_cost";
+      amount: number;
+    }
+  | {
+      characterId: string;
+      type: "mana_restore";
+      amount: number;
+    }
+  | {
+      characterId: string;
+      type: "xp";
+      amount: number;
+    };

@@ -35,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
             description: true,
             backgroundLore: true,
             startingLocation: true,
-            startingObjective: true,
+            mainObjective: true,
             worldSetup: true,
           },
         },

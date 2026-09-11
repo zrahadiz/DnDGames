@@ -8,9 +8,22 @@ import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";
 import { getRoomState } from "./rooms/getRoomState";
 
-const io = new Server(3001, {
-  cors: { origin: "*", credentials: true }, // later: set to your frontend URL
+const PORT = Number(process.env.PORT) || 3001;
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
+const io = new Server(PORT, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+  transports: ["polling", "websocket"],
 });
+
+console.log(`🚀 Socket.IO server running on port ${PORT}`);
 
 // Keep track of socket ↔ user mapping
 const socketUserMap = new Map<
@@ -35,6 +48,86 @@ const setPlayerConnection = async (
     })
     .where(and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.userId, userId)));
 };
+
+async function ensureActiveHost(roomId: string, preferredUserId?: string) {
+  await db.transaction(async (tx) => {
+    const room = await tx.query.rooms.findFirst({
+      where: eq(rooms.id, roomId),
+    });
+
+    if (!room) return;
+
+    const currentHost = await tx.query.roomPlayers.findFirst({
+      where: and(
+        eq(roomPlayers.roomId, roomId),
+        eq(roomPlayers.userId, room.hostId),
+      ),
+    });
+
+    // Current host is still connected, Nothing needs to change.
+    if (currentHost?.isConnected) {
+      return;
+    }
+
+    let nextHost = null;
+
+    // Prefer the player who just connected.
+    if (preferredUserId) {
+      nextHost = await tx.query.roomPlayers.findFirst({
+        where: and(
+          eq(roomPlayers.roomId, roomId),
+          eq(roomPlayers.userId, preferredUserId),
+          eq(roomPlayers.isConnected, true),
+        ),
+      });
+    }
+
+    // Fallback: find any currently connected player.
+    if (!nextHost) {
+      nextHost = await tx.query.roomPlayers.findFirst({
+        where: and(
+          eq(roomPlayers.roomId, roomId),
+          eq(roomPlayers.isConnected, true),
+        ),
+      });
+    }
+
+    // Nobody is connected, Keep the current host ownership unchanged for now.
+    if (!nextHost) {
+      return;
+    }
+
+    // Demote previous host
+    await tx
+      .update(roomPlayers)
+      .set({
+        role: "player",
+      })
+      .where(and(eq(roomPlayers.roomId, roomId), eq(roomPlayers.role, "host")));
+
+    // Promote the new host
+    await tx
+      .update(roomPlayers)
+      .set({
+        role: "host",
+      })
+      .where(eq(roomPlayers.id, nextHost.id));
+
+    // Update room.hostId
+    await tx
+      .update(rooms)
+      .set({
+        hostId: nextHost.userId,
+      })
+      .where(eq(rooms.id, roomId));
+
+    console.log("Host reassigned:", {
+      roomId,
+      previousHostId: room.hostId,
+      newHostId: nextHost.userId,
+    });
+  });
+}
 
 export async function transferHostIfNeeded(
   roomId: string,
@@ -227,6 +320,9 @@ io.on("connection", (socket) => {
           previousInfo.userId,
           false,
         );
+
+        // make sure previous room still has an active host
+        await ensureActiveHost(previousInfo.roomId);
       }
 
       socket.join(roomKey);
@@ -237,6 +333,8 @@ io.on("connection", (socket) => {
       });
 
       await setPlayerConnection(roomId, userId, true);
+
+      await ensureActiveHost(roomId, userId);
 
       const room = await getRoomState(roomId);
 
@@ -258,6 +356,7 @@ io.on("connection", (socket) => {
         userId,
         roomId,
         socketId: socket.id,
+        hostId: room.hostId,
       });
     } catch (error) {
       console.error("Failed to join room:", error);

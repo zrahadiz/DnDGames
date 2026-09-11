@@ -1,17 +1,29 @@
-import type { CampaignWithRelations } from "@/types/campaigns";
+type ConfirmationModalProps = {
+  title: string;
+  description: React.ReactNode;
+  cancelLabel?: string;
+  confirmLabel?: string;
+  variant?: "default" | "danger";
+  onClose: () => void;
+  onConfirm: () => void;
+  isLoading?: boolean;
+};
 
-export default function DeleteModal({
-  campaign,
+export default function ConfirmationModal({
+  title,
+  description,
+  cancelLabel = "Cancel",
+  confirmLabel = "Confirm",
+  variant = "default",
   onClose,
   onConfirm,
-}: {
-  campaign: CampaignWithRelations;
-  onClose: () => void;
-  onConfirm: ({ campaign }: { campaign: CampaignWithRelations }) => void;
-}) {
+  isLoading = false,
+}: ConfirmationModalProps) {
+  const isDanger = variant === "danger";
+
   return (
     <div
-      onClick={onClose}
+      onClick={isLoading ? undefined : onClose}
       style={{
         position: "fixed",
         inset: 0,
@@ -31,17 +43,21 @@ export default function DeleteModal({
           maxWidth: "380px",
           borderRadius: "20px",
           background: "linear-gradient(160deg,#1a1208,#120d1a)",
-          border: "1px solid rgba(239,68,68,0.3)",
+          border: isDanger
+            ? "1px solid rgba(239,68,68,0.3)"
+            : "1px solid rgba(200,169,110,0.25)",
           overflow: "hidden",
         }}
       >
         <div
           style={{
             height: "1px",
-            background:
-              "linear-gradient(90deg,transparent,rgba(239,68,68,0.6),transparent)",
+            background: isDanger
+              ? "linear-gradient(90deg,transparent,rgba(239,68,68,0.6),transparent)"
+              : "linear-gradient(90deg,transparent,rgba(200,169,110,0.5),transparent)",
           }}
         />
+
         <div
           style={{
             padding: "24px",
@@ -58,23 +74,30 @@ export default function DeleteModal({
               margin: 0,
             }}
           >
-            Delete Campaign?
+            {title}
           </h2>
-          <p
+
+          <div
             style={{
               fontFamily: "Georgia,serif",
               color: "#7a6548",
               fontStyle: "italic",
               fontSize: "13px",
               lineHeight: 1.75,
-              margin: 0,
             }}
           >
-            <span style={{ color: "#f87171" }}>{campaign.title}</span> will be
-            permanently erased from the realm. This cannot be undone.
-          </p>
-          <div style={{ display: "flex", gap: "10px" }}>
+            {description}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+            }}
+          >
             <button
+              type="button"
+              disabled={isLoading}
               onClick={onClose}
               style={{
                 flex: 1,
@@ -85,26 +108,35 @@ export default function DeleteModal({
                 background: "transparent",
                 border: "1px solid rgba(200,169,110,0.2)",
                 color: "#8a6f3e",
-                cursor: "pointer",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.5 : 1,
               }}
             >
-              Keep It
+              {cancelLabel}
             </button>
+
             <button
-              onClick={() => onConfirm({ campaign })}
+              type="button"
+              disabled={isLoading}
+              onClick={onConfirm}
               style={{
                 flex: 1,
                 padding: "10px",
                 borderRadius: "12px",
                 fontFamily: "'Cinzel',serif",
                 fontSize: "13px",
-                background: "rgba(153,27,27,0.3)",
-                border: "1px solid rgba(239,68,68,0.4)",
-                color: "#f87171",
-                cursor: "pointer",
+                background: isDanger
+                  ? "rgba(153,27,27,0.3)"
+                  : "rgba(120,90,40,0.25)",
+                border: isDanger
+                  ? "1px solid rgba(239,68,68,0.4)"
+                  : "1px solid rgba(200,169,110,0.35)",
+                color: isDanger ? "#f87171" : "#d8b56c",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.7 : 1,
               }}
             >
-              Destroy
+              {isLoading ? "Processing..." : confirmLabel}
             </button>
           </div>
         </div>

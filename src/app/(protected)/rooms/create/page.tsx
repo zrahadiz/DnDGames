@@ -54,7 +54,6 @@ export default function CreateRoom() {
       name: "",
       race: "",
       characterClass: "",
-      backstory: "",
     },
   });
 

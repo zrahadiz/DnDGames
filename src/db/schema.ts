@@ -41,9 +41,11 @@ export const roomPlayerRoleEnum = pgEnum("room_player_role", [
 
 export const actionTypeEnum = pgEnum("action_sender_type", [
   "ai_narration",
+  "game_end",
   "player_action",
   "dice_roll",
   "combat",
+  "skip_turn",
 ]);
 
 export const messageSenderTypeEnum = pgEnum("message_sender_type", [
@@ -192,7 +194,7 @@ export const campaigns = pgTable("campaigns", {
 
   startingLocation: text("starting_location"),
 
-  startingObjective: text("starting_objective"),
+  mainObjective: text("main_objective"),
 
   worldSetup: jsonb("world_setup").$type<Record<string, string>>().notNull(),
 
@@ -413,11 +415,15 @@ export const characters = pgTable("characters", {
 
   level: integer("level").notNull().default(1),
 
+  xp: integer("xp").notNull().default(0),
+
   hp: integer("hp").notNull().default(100),
+
+  maxHp: integer("max_hp").notNull().default(100),
 
   mana: integer("mana").notNull().default(100),
 
-  backstory: text("backstory"),
+  maxMana: integer("max_mana").notNull().default(100),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 

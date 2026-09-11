@@ -32,7 +32,16 @@ export type RoomDetail = Rooms & {
 
 export type RoomCharacterContext = Pick<
   Characters,
-  "name" | "race" | "characterClass" | "level" | "hp" | "mana" | "backstory"
+  | "id"
+  | "name"
+  | "race"
+  | "characterClass"
+  | "level"
+  | "xp"
+  | "hp"
+  | "maxHp"
+  | "mana"
+  | "maxMana"
 >;
 
 export type RoomContext = {
@@ -49,7 +58,7 @@ export type RoomContext = {
     | "description"
     | "backgroundLore"
     | "startingLocation"
-    | "startingObjective"
+    | "mainObjective"
     | "worldSetup"
   >;
 

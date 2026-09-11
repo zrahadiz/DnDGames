@@ -3,6 +3,7 @@ import { gameEvents, rooms } from "@/db/schema";
 import { generateTurnNarration } from "@/server/ai/service/generateTurnNarration";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
+import { applyCharacterEffects } from "@/server/game/applyCharacterEffects";
 import { apiResponse } from "@/server/utils/apiResponse";
 import { eq, ne, and } from "drizzle-orm";
 
@@ -30,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
             description: true,
             backgroundLore: true,
             startingLocation: true,
-            startingObjective: true,
+            mainObjective: true,
             worldSetup: true,
           },
         },
@@ -71,15 +72,22 @@ export async function POST(req: Request, { params }: { params: Params }) {
       });
     }
 
+    const activePlayers = room.players.filter(
+      (player) => player.character && player.character.hp > 0,
+    );
+
+    const totalPlayers = activePlayers.length;
+
     const submittedActions = await db.query.gameEvents.findMany({
       where: and(
         eq(gameEvents.roomId, roomId),
         eq(gameEvents.turnNumber, room.currentTurn),
         ne(gameEvents.eventType, "ai_narration"),
+        ne(gameEvents.eventType, "game_end"),
       ),
     });
 
-    if (submittedActions.length < room.players.length) {
+    if (submittedActions.length < totalPlayers) {
       return apiResponse(400, {
         success: false,
         message: "Not all players have submitted actions",
@@ -92,11 +100,16 @@ export async function POST(req: Request, { params }: { params: Params }) {
       return {
         character: player?.character
           ? {
+              id: player.character.id,
               name: player.character.name,
               race: player.character.race,
               characterClass: player.character.characterClass,
               level: player.character.level,
+              xp: player.character.xp,
+              hp: player.character.hp,
+              maxHp: player.character.maxHp,
               mana: player.character.mana,
+              maxMana: player.character.maxMana,
             }
           : null,
         eventType: action.eventType,
@@ -104,14 +117,57 @@ export async function POST(req: Request, { params }: { params: Params }) {
       };
     });
 
-    const narration = await generateTurnNarration({
+    const aiResult = await generateTurnNarration({
       room,
       actions: actionsForAi,
     });
 
-    console.log("narr: ", narration);
+    console.log("AI result: ", aiResult);
+    const isGameOver = aiResult.outcome !== "ongoing";
+
+    const allowedCharacterIds = new Set(
+      room.players
+        .map((player) => player.character?.id)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    const safeEffects = aiResult.characterEffects.filter((effect) =>
+      allowedCharacterIds.has(effect.characterId),
+    );
 
     const data = await db.transaction(async (tx) => {
+      const updatedCharacters = await applyCharacterEffects(tx, safeEffects);
+      if (isGameOver) {
+        const [aiEvent] = await tx
+          .insert(gameEvents)
+          .values({
+            roomId,
+            turnNumber: room.currentTurn,
+            eventType: "game_end",
+            payload: {
+              reason: aiResult.outcome,
+              title: aiResult.ending!.title,
+              summary: aiResult.ending!.summary,
+              narrative: aiResult.narrative,
+            },
+          })
+          .returning();
+
+        await tx
+          .update(rooms)
+          .set({
+            status: "finished",
+          })
+          .where(eq(rooms.id, roomId));
+
+        return {
+          aiEvent,
+          outcome: aiResult.outcome,
+          updatedCharacters,
+          nextTurn: room.currentTurn,
+        };
+      }
+
       const [aiEvent] = await tx
         .insert(gameEvents)
         .values({
@@ -119,7 +175,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
           turnNumber: room.currentTurn,
           eventType: "ai_narration",
           payload: {
-            text: narration,
+            text: aiResult.narrative,
           },
         })
         .returning();
@@ -133,6 +189,8 @@ export async function POST(req: Request, { params }: { params: Params }) {
 
       return {
         aiEvent,
+        outcome: aiResult.outcome,
+        updatedCharacters,
         nextTurn: room.currentTurn + 1,
       };
     });
@@ -143,11 +201,13 @@ export async function POST(req: Request, { params }: { params: Params }) {
       data: {
         aiEvent: data.aiEvent,
         nextTurn: data.nextTurn,
+        outcome: data.outcome,
+        updatedCharacters: data.updatedCharacters,
         turnProgress: {
           currentTurn: data.nextTurn,
           submittedCount: 0,
-          totalPlayers: room.players.length,
-          remainingCount: room.players.length,
+          totalPlayers,
+          remainingCount: totalPlayers,
           allPlayersSubmitted: false,
         },
       },

@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import GoldBar from "@/components/ornaments/goldBar";
 import CustomFieldLabel from "@/components/forms/customFieldLabel";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import { X } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Volume2, VolumeOff, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "@/lib/toast";
 
 interface CombatFormDialogProps {
   open: boolean;
@@ -25,108 +26,190 @@ interface CombatFormDialogProps {
   onCombat: () => void;
 }
 
+function StatBar({
+  label,
+  current,
+  max,
+  pct,
+  gradient,
+  glowColor,
+  trackBorder,
+}: {
+  label: string;
+  current: number;
+  max: number;
+  pct: number;
+  gradient: string;
+  glowColor: string;
+  trackBorder: string;
+}) {
+  return (
+    <div className="space-y-0.5">
+      <div className="flex justify-between items-center">
+        <span className="text-[9px] font-cinzel tracking-widest text-[#5a4830] uppercase">
+          {label}
+        </span>
+        <span className="text-[9px] font-cinzel text-[#5a4830] tabular-nums">
+          {current}
+          <span className="text-[#3a2a14]">/{max}</span>
+        </span>
+      </div>
+      <div
+        className={`h-1.5 w-full rounded-full bg-black/50 border overflow-hidden ${trackBorder}`}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${pct}%`,
+            background: gradient,
+            boxShadow: pct > 0 ? `0 0 6px ${glowColor}` : "none",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PlayerSideCard({
   player,
   onKick,
+  isHost,
 }: {
   player: RoomDetail["players"][number];
   onKick?: () => void;
+  isHost: boolean;
 }) {
   const role = player.role ?? "player";
+  const level = player.character?.level ?? 1;
+  const xp = player.character?.xp ?? 0;
   const hp = player.character?.hp ?? 0;
+  const maxHp = player.character?.maxHp ?? 0;
   const mana = player.character?.mana ?? 0;
-  const maxHp = player.character?.hp ?? hp;
-  const maxMana = player.character?.mana ?? mana;
+  const maxMana = player.character?.maxMana ?? 0;
+  const xpPct = level * 100 > 0 ? Math.round((xp / (level * 100)) * 100) : 100;
   const hpPct = maxHp > 0 ? Math.round((hp / maxHp) * 100) : 100;
   const manaPct = maxMana > 0 ? Math.round((mana / maxMana) * 100) : 100;
 
   return (
     <div
-      className={`rounded-xl border p-3 space-y-2.5 transition-all ${
+      className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
         player.isConnected
-          ? "border-[rgba(200,169,110,0.15)] bg-[rgba(26,18,8,0.7)]"
-          : "border-[rgba(90,72,48,0.2)] bg-black/30 opacity-60"
+          ? "border-[rgba(200,169,110,0.18)] bg-gradient-to-b from-[#1a1208] to-[#120d1a]"
+          : "border-[rgba(90,72,48,0.15)] bg-black/30 opacity-50"
       }`}
     >
-      {/* Name row */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
-            onClick={onKick}
-          >
-            <X className="text-[#5a4830]" />
-          </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[13px] font-cinzel tracking-wide text-[#e8d5a3] truncate">
-                {player.character?.name ?? "Unknown"}
+      {/* Top accent bar */}
+      <div
+        className="h-0.5 w-full"
+        style={{
+          background: player.isConnected
+            ? "linear-gradient(90deg,transparent,rgba(200,169,110,0.5),transparent)"
+            : "linear-gradient(90deg,transparent,rgba(90,72,48,0.3),transparent)",
+        }}
+      />
+
+      <div className="p-3 space-y-3">
+        {/* ── Name + role row ── */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Kick button */}
+            {isHost && (
+              <Button
+                variant="ghost"
+                className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+                onClick={onKick}
+              >
+                <X className="text-[#5a4830]" />
+              </Button>
+            )}
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-[13px] font-cinzel tracking-wide text-[#e8d5a3] truncate leading-tight">
+                  {player.character?.name ?? "Unknown"}
+                </p>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-cinzel tracking-wider border border-[rgba(200,169,110,0.25)] bg-[rgba(200,169,110,0.08)] text-[#8a6f3e]">
+                  {role}
+                </span>
+              </div>
+              <p className="text-[10px] font-serif italic text-[#5a4830] truncate mt-0.5">
+                {player.character?.race} · {player.character?.characterClass}
               </p>
-              <Badge className="border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.1)] text-[#c8a96e] text-[10px] font-serif italic px-1.5 py-0">
-                {role}
-              </Badge>
             </div>
-            <p className="text-[11px] font-serif italic text-[#5a4830] truncate">
-              {player.character?.race} · {player.character?.characterClass}
-            </p>
+          </div>
+
+          {/* Online indicator */}
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                player.isConnected
+                  ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"
+                  : "bg-[#3a2a14]"
+              }`}
+            />
+            <span
+              className={`text-[8px] font-cinzel tracking-wide ${player.isConnected ? "text-emerald-600" : "text-[#3a2a14]"}`}
+            >
+              {player.isConnected ? "ON" : "OFF"}
+            </span>
           </div>
         </div>
-        {/* Online dot */}
-        <span
-          className={`w-2 h-2 rounded-full shrink-0 ${
-            player.isConnected ? "bg-emerald-400" : "bg-[#5a4830]"
-          }`}
-          title={player.isConnected ? "Online" : "Offline"}
-        />
-      </div>
 
-      {/* Level */}
-      <div className="flex items-center justify-between text-[10px] font-cinzel tracking-wide">
-        <span className="text-[#8a6f3e]">
-          Level {player.character?.level ?? 1}
-        </span>
-      </div>
-
-      {/* HP bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] font-cinzel tracking-wide text-[#5a4830]">
-          <span>HP</span>
-          <span>
-            {hp} / {maxHp}
+        {/* ── Level + XP row ── */}
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-cinzel tracking-wider text-[#8a6f3e]">
+            LVL {level}
+          </span>
+          <span className="text-[10px] font-serif italic text-[#5a4830]">
+            {xp} / {level * 100} XP
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-black/40 border border-[rgba(239,68,68,0.1)] overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${hpPct}%`,
-              background:
-                hpPct > 50
-                  ? "linear-gradient(90deg,#16a34a,#4ade80)"
-                  : hpPct > 25
-                    ? "linear-gradient(90deg,#d97706,#fbbf24)"
-                    : "linear-gradient(90deg,#991b1b,#f87171)",
-            }}
+
+        {/* ── Stats bars ── */}
+        <div className="space-y-2">
+          {/* HP */}
+          <StatBar
+            label="HP"
+            current={hp}
+            max={maxHp}
+            pct={hpPct}
+            gradient={
+              hpPct > 50
+                ? "linear-gradient(90deg,#16a34a,#4ade80)"
+                : hpPct > 25
+                  ? "linear-gradient(90deg,#d97706,#fbbf24)"
+                  : "linear-gradient(90deg,#991b1b,#f87171)"
+            }
+            glowColor={
+              hpPct > 50
+                ? "rgba(74,222,128,0.3)"
+                : hpPct > 25
+                  ? "rgba(251,191,36,0.3)"
+                  : "rgba(248,113,113,0.3)"
+            }
+            trackBorder="border-[rgba(239,68,68,0.1)]"
           />
-        </div>
-      </div>
 
-      {/* Mana bar */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-[10px] font-cinzel tracking-wide text-[#5a4830]">
-          <span>Mana</span>
-          <span>
-            {mana} / {maxMana}
-          </span>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-black/40 border border-[rgba(124,58,237,0.1)] overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${manaPct}%`,
-              background: "linear-gradient(90deg,#6d28d9,#a78bfa)",
-            }}
+          {/* Mana */}
+          <StatBar
+            label="MP"
+            current={mana}
+            max={maxMana}
+            pct={manaPct}
+            gradient="linear-gradient(90deg,#6d28d9,#a78bfa)"
+            glowColor="rgba(167,139,250,0.3)"
+            trackBorder="border-[rgba(124,58,237,0.1)]"
+          />
+
+          {/* XP */}
+          <StatBar
+            label="XP"
+            current={xp}
+            max={level * 100}
+            pct={xpPct}
+            gradient="linear-gradient(90deg,#0d9488,#2dd4bf)"
+            glowColor="rgba(45,212,191,0.3)"
+            trackBorder="border-[rgba(13,148,136,0.1)]"
           />
         </div>
       </div>
@@ -137,38 +220,157 @@ export function PlayerSideCard({
 export function MobilePlayerChip({
   player,
   onKick,
+  isHost,
 }: {
   player: RoomDetail["players"][number];
   onKick?: () => void;
+  isHost: boolean;
 }) {
+  const hp = player.character?.hp ?? 0;
+  const maxHp = player.character?.maxHp ?? hp;
+  const mana = player.character?.mana ?? 0;
+  const maxMana = player.character?.maxMana ?? mana;
+  const xp = player.character?.xp ?? 0;
+  const level = player.character?.level ?? 1;
+  const maxXp = level * 100;
+
+  const hpPct = maxHp > 0 ? Math.min((hp / maxHp) * 100, 100) : 0;
+  const manaPct = maxMana > 0 ? Math.min((mana / maxMana) * 100, 100) : 0;
+  const xpPct = maxXp > 0 ? Math.min((xp / maxXp) * 100, 100) : 0;
+
+  const hpGradient =
+    hpPct > 50
+      ? "linear-gradient(90deg,#16a34a,#4ade80)"
+      : hpPct > 25
+        ? "linear-gradient(90deg,#d97706,#fbbf24)"
+        : "linear-gradient(90deg,#991b1b,#f87171)";
+
   return (
-    <div className="shrink-0 flex items-center gap-2 rounded-xl border border-[rgba(200,169,110,0.12)] bg-[rgba(26,18,8,0.8)] px-3 py-2">
-      <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${player.isConnected ? "bg-emerald-400" : "bg-[#5a4830]"}`}
+    <div className="shrink-0 rounded-2xl border border-[rgba(200,169,110,0.15)] bg-gradient-to-b from-[#1a1208] to-[#120d1a] overflow-hidden w-36">
+      {/* Top accent */}
+      <div
+        className="h-0.5 w-full"
+        style={{
+          background: player.isConnected
+            ? "linear-gradient(90deg,transparent,rgba(200,169,110,0.5),transparent)"
+            : "linear-gradient(90deg,transparent,rgba(90,72,48,0.3),transparent)",
+        }}
       />
-      <div>
-        <div className="flex items-center gap-1.5">
-          <p className="text-[12px] font-cinzel tracking-wide text-[#e8d5a3] whitespace-nowrap">
-            {player.character?.name ?? "Unknown"}
-          </p>
-          <Badge className="border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.1)] text-[#c8a96e] text-[10px] font-serif italic px-1.5 py-0">
-            {player.role}
-          </Badge>
+
+      <div className="px-2.5 py-2 space-y-2">
+        {/* Name row */}
+        <div className="flex items-start justify-between gap-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1 flex-wrap">
+              {/* Online dot */}
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  player.isConnected
+                    ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.6)]"
+                    : "bg-[#3a2a14]"
+                }`}
+              />
+              <p className="text-[11px] font-cinzel tracking-wide text-[#e8d5a3] truncate leading-tight">
+                {player.character?.name ?? "Unknown"}
+              </p>
+            </div>
+            <p className="text-[9px] font-serif italic text-[#5a4830] truncate mt-0.5">
+              {player.character?.race} · Lvl {level}
+            </p>
+          </div>
+
+          {/* Kick */}
+          {isHost && (
+            <button
+              type="button"
+              onClick={onKick}
+              className="shrink-0 flex h-5 w-5 items-center justify-center rounded-md border border-[rgba(239,68,68,0.2)] bg-transparent text-[#f87171]/40 hover:border-[rgba(239,68,68,0.4)] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#f87171] transition-all cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
-        <p className="text-[10px] font-serif italic text-[#5a4830] whitespace-nowrap">
-          HP {player.character?.hp ?? "?"} · Mana{" "}
-          {player.character?.mana ?? "?"}
-        </p>
+
+        {/* Role badge */}
+        <span className="inline-block text-[8px] px-1.5 py-0.5 rounded-full font-cinzel tracking-wider border border-[rgba(200,169,110,0.2)] bg-[rgba(200,169,110,0.06)] text-[#8a6f3e]">
+          {player.role}
+        </span>
+
+        {/* Stat bars */}
+        <div className="space-y-1.5">
+          {/* HP */}
+          <div className="space-y-0.5">
+            <div className="flex justify-between">
+              <span className="text-[8px] font-cinzel tracking-widest text-[#5a4830] uppercase">
+                HP
+              </span>
+              <span className="text-[8px] font-cinzel text-[#5a4830] tabular-nums">
+                {hp}
+                <span className="text-[#3a2a14]">/{maxHp}</span>
+              </span>
+            </div>
+            <div className="h-1 w-full rounded-full bg-black/50 border border-[rgba(239,68,68,0.1)] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${hpPct}%`,
+                  background: hpGradient,
+                  boxShadow:
+                    hpPct > 0 ? "0 0 4px rgba(74,222,128,0.3)" : "none",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Mana */}
+          <div className="space-y-0.5">
+            <div className="flex justify-between">
+              <span className="text-[8px] font-cinzel tracking-widest text-[#5a4830] uppercase">
+                MP
+              </span>
+              <span className="text-[8px] font-cinzel text-[#5a4830] tabular-nums">
+                {mana}
+                <span className="text-[#3a2a14]">/{maxMana}</span>
+              </span>
+            </div>
+            <div className="h-1 w-full rounded-full bg-black/50 border border-[rgba(124,58,237,0.1)] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${manaPct}%`,
+                  background: "linear-gradient(90deg,#6d28d9,#a78bfa)",
+                  boxShadow:
+                    manaPct > 0 ? "0 0 4px rgba(167,139,250,0.3)" : "none",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* XP */}
+          <div className="space-y-0.5">
+            <div className="flex justify-between">
+              <span className="text-[8px] font-cinzel tracking-widest text-[#5a4830] uppercase">
+                XP
+              </span>
+              <span className="text-[8px] font-cinzel text-[#5a4830] tabular-nums">
+                {xp}
+                <span className="text-[#3a2a14]">/{maxXp}</span>
+              </span>
+            </div>
+            <div className="h-1 w-full rounded-full bg-black/50 border border-[rgba(13,148,136,0.1)] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${xpPct}%`,
+                  background: "linear-gradient(90deg,#0d9488,#2dd4bf)",
+                  boxShadow:
+                    xpPct > 0 ? "0 0 4px rgba(45,212,191,0.3)" : "none",
+                }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
-      <span className="ml-auto text-[10px] font-cinzel tracking-wide text-[#8a6f3e]">
-        <Button
-          variant="ghost"
-          className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
-          onClick={onKick}
-        >
-          <X className="text-[#5a4830]" />
-        </Button>
-      </span>
     </div>
   );
 }
@@ -296,6 +498,90 @@ export function CombatDialog({
 export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
   const payload = msg.payload as Record<string, unknown>;
   const characterName = msg.characters?.name ?? "Unknown";
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(
+    null,
+  );
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const handleSpeak = (messageId: string, text: string) => {
+    console.log("Starting speech synthesis...", messageId);
+
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      toast("Text-to-speech is not supported.", {
+        type: "error",
+      });
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    utteranceRef.current = utterance;
+
+    utterance.rate = 0.95;
+    utterance.pitch = 0.9;
+    utterance.volume = 1;
+
+    const voices = window.speechSynthesis.getVoices();
+
+    const preferredVoice =
+      voices.find(
+        (voice) =>
+          voice.lang.startsWith("en") &&
+          (voice.name.includes("Natural") ||
+            voice.name.includes("Neural") ||
+            voice.name.includes("Microsoft")),
+      ) ?? voices.find((voice) => voice.lang.startsWith("en"));
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.onstart = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      setSpeakingMessageId(messageId);
+    };
+
+    utterance.onend = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      utteranceRef.current = null;
+      setSpeakingMessageId(null);
+    };
+
+    utterance.onerror = () => {
+      if (utteranceRef.current !== utterance) {
+        return;
+      }
+
+      utteranceRef.current = null;
+      setSpeakingMessageId(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleStop = () => {
+    console.log("Stopping speech synthesis...");
+
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      return;
+    }
+
+    utteranceRef.current = null;
+
+    window.speechSynthesis.cancel();
+
+    setSpeakingMessageId(null);
+  };
+
+  const isThisMessageSpeaking = speakingMessageId === msg.id;
 
   // ── AI Narration ──────────────────────────────────────────────────────────
   if (msg.eventType === "ai_narration") {
@@ -313,6 +599,35 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
         <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif italic text-[#b8a8d8]">
           {String(payload.text ?? "")}
         </p>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-[rgba(125,64,230,0.07)] text-[#b8a8d8] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#d0c3e9] transition-all duration-150 cursor-pointer"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              console.log(
+                "pointer down",
+                isThisMessageSpeaking ? "STOP" : "PLAY",
+              );
+
+              if (isThisMessageSpeaking) {
+                handleStop();
+              } else {
+                handleSpeak(msg.id, String(payload.text ?? ""));
+              }
+            }}
+            onClick={(e) => {
+              // Important:
+              // don't play/stop anything here.
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {isThisMessageSpeaking ? <VolumeOff /> : <Volume2 />}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -333,6 +648,45 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
         <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif text-[#9a8878]">
           {String(payload.text ?? "")}
         </p>
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            className="p-0 h-6 w-6 rounded-lg border border-[rgba(90,72,48,0.2)] bg-black/30 text-[#5a4830] hover:bg-[rgba(90,72,48,0.1)] hover:text-[#8a6f3e] transition-all duration-150 cursor-pointer"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              console.log(
+                "pointer down",
+                isThisMessageSpeaking ? "STOP" : "PLAY",
+              );
+
+              if (isThisMessageSpeaking) {
+                handleStop();
+              } else {
+                handleSpeak(msg.id, String(payload.text ?? ""));
+              }
+            }}
+            onClick={(e) => {
+              // Important:
+              // don't play/stop anything here.
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {isThisMessageSpeaking ? <VolumeOff /> : <Volume2 />}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (msg.eventType === "skip_turn") {
+    return (
+      <div className="flex items-center gap-2 py-1.5 text-[11px] font-serif italic text-[#6f6658]">
+        <span>⏭</span>
+
+        <span>{msg.characters?.name ?? "Player"} chose to wait this turn.</span>
       </div>
     );
   }
@@ -434,6 +788,132 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ── End Game ─────────────────────────────────────────────────────────────
+  if (msg.eventType === "game_end") {
+    const title = payload.title as string | undefined;
+    const reason = payload.reason as string | undefined;
+    const summary = payload.summary as string | undefined;
+    const narrative = payload.narrative as string | undefined;
+    const isVictory = payload.reason === "victory";
+
+    return (
+      <div
+        className={`rounded-xl border p-5 space-y-4 relative overflow-hidden ${
+          isVictory
+            ? "border-[rgba(52,211,153,0.3)] bg-[rgba(13,148,136,0.06)]"
+            : "border-[rgba(239,68,68,0.3)] bg-[rgba(153,27,27,0.07)]"
+        }`}
+      >
+        {/* Shimmer top bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: isVictory
+              ? "linear-gradient(90deg,transparent,rgba(52,211,153,0.7),transparent)"
+              : "linear-gradient(90deg,transparent,rgba(239,68,68,0.7),transparent)",
+          }}
+        />
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={`flex items-center gap-2 text-[12px] font-cinzel tracking-wide ${
+              isVictory ? "text-[#34d399]" : "text-[#f87171]"
+            }`}
+          >
+            <span className="text-base">{isVictory ? "👑" : "💀"}</span>
+            {isVictory ? "Victory" : "Defeat"}
+          </span>
+          <span className="text-[10px] font-serif italic text-[#3a2a14] shrink-0">
+            Turn {msg.turnNumber}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div className="text-center space-y-1 py-2">
+          <p
+            className={`text-xs font-cinzel tracking-[0.2em] uppercase ${
+              isVictory ? "text-[#0d9488]" : "text-[#7a3030]"
+            }`}
+          >
+            {isVictory ? "✦ Quest Complete ✦" : "✗ Quest Failed ✗"}
+          </p>
+          <h3
+            className={`text-base font-bold font-cinzel tracking-wide leading-snug ${
+              isVictory ? "text-[#a7f3d0]" : "text-[#f8a0a0]"
+            }`}
+          >
+            {title ?? "The End"}
+          </h3>
+        </div>
+
+        {/* Ornamental divider */}
+        <div className="flex items-center gap-3">
+          <div
+            className="flex-1 h-px"
+            style={{
+              background: isVictory
+                ? "linear-gradient(90deg,transparent,rgba(52,211,153,0.2))"
+                : "linear-gradient(90deg,transparent,rgba(239,68,68,0.15))",
+            }}
+          />
+          <span
+            className={`text-base ${isVictory ? "opacity-60" : "opacity-40"}`}
+          >
+            {isVictory ? "⚔" : "🕯"}
+          </span>
+          <div
+            className="flex-1 h-px"
+            style={{
+              background: isVictory
+                ? "linear-gradient(90deg,rgba(52,211,153,0.2),transparent)"
+                : "linear-gradient(90deg,rgba(239,68,68,0.15),transparent)",
+            }}
+          />
+        </div>
+
+        {/* Narrative — the dramatic story close */}
+        {narrative && (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap font-serif italic text-[#b8a8d8]">
+            {narrative}
+          </p>
+        )}
+
+        {/* Summary box */}
+        {summary && (
+          <div
+            className={`rounded-xl border px-4 py-3 space-y-1 ${
+              isVictory
+                ? "border-[rgba(52,211,153,0.12)] bg-[rgba(13,148,136,0.05)]"
+                : "border-[rgba(239,68,68,0.12)] bg-[rgba(153,27,27,0.06)]"
+            }`}
+          >
+            <p
+              className={`text-[10px] font-cinzel tracking-widest uppercase ${
+                isVictory ? "text-[#0d9488]" : "text-[#7a3030]"
+              }`}
+            >
+              Chronicle
+            </p>
+            <p className="text-[13px] font-serif italic leading-relaxed text-[#b8b8b8]">
+              {summary}
+            </p>
+          </div>
+        )}
+
+        {/* Bottom shimmer */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{
+            background: isVictory
+              ? "linear-gradient(90deg,transparent,rgba(200,169,110,0.5),transparent)"
+              : "linear-gradient(90deg,transparent,rgba(239,68,68,0.4),transparent)",
+          }}
+        />
       </div>
     );
   }
