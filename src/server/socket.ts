@@ -8,9 +8,22 @@ import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";
 import { getRoomState } from "./rooms/getRoomState";
 
-const io = new Server(3001, {
-  cors: { origin: "*", credentials: true }, // later: set to your frontend URL
+const PORT = Number(process.env.PORT) || 3001;
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
+const io = new Server(PORT, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+  transports: ["polling", "websocket"],
 });
+
+console.log(`🚀 Socket.IO server running on port ${PORT}`);
 
 // Keep track of socket ↔ user mapping
 const socketUserMap = new Map<
