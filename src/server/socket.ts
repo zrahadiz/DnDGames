@@ -2,7 +2,7 @@ import "dotenv/config"; // must be the very first line
 import { Server } from "socket.io";
 import { db } from "@/db";
 import { roomPlayers, rooms } from "@/db/schema";
-import { GameEventWithRelations, TurnProgress } from "@/types/gameEvents";
+import type { GameEventWithRelations, TurnProgress } from "@/types/gameEvents";
 import { eq, and, ne, asc } from "drizzle-orm";
 import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";

@@ -1,14 +1,22 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "noEmit": false,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES2022"
+    "target": "ES2022",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": false
   },
   "include": [
     "src/server/**/*.ts",
-    "src/db/**/*.ts"
+    "src/db/**/*.ts",
+    "src/lib/**/*.ts",
+    "src/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist"
   ]
 }
