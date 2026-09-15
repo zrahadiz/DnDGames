@@ -1,4 +1,6 @@
 import "dotenv/config"; // must be the very first line
+
+import { createServer } from "http";
 import { Server } from "socket.io";
 import { db } from "@/db";
 import { roomPlayers, rooms } from "@/db/schema";
@@ -15,6 +17,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
+const httpServer = createServer();
+
 const io = new Server(PORT, {
   cors: {
     origin: allowedOrigins,
@@ -22,8 +26,6 @@ const io = new Server(PORT, {
   },
   transports: ["polling", "websocket"],
 });
-
-console.log(`🚀 Socket.IO server running on port ${PORT}`);
 
 // Keep track of socket ↔ user mapping
 const socketUserMap = new Map<
@@ -544,4 +546,6 @@ io.on("connection", (socket) => {
 
 setIO(io);
 
-console.log("✅ Socket server running on :3001");
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`Socket.IO running on port ${PORT}`);
+});
