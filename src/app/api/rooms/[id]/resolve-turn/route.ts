@@ -4,7 +4,7 @@ import { generateTurnNarration } from "@/server/ai/service/generateTurnNarration
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { applyCharacterEffects } from "@/server/game/applyCharacterEffects";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { eq, ne, and } from "drizzle-orm";
 
 type Params = Promise<{ id: string }>;

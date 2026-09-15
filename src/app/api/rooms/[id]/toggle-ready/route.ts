@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { roomPlayers, rooms } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { requiredUser } from "@/server/auth/requiredUser";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 
 type Params = Promise<{

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 
 import { campaigns, campaignRaces, campaignClasses } from "@/db/schema";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 

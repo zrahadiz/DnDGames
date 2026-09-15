@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 import { requiredUser } from "@/server/auth/requiredUser";
 

@@ -2,7 +2,7 @@
 import { db } from "@/db";
 import { roomPlayers, characters, rooms, user } from "@/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { joinRoomSchema } from "@/server/validators/roomPlayers";
 

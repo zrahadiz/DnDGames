@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, ReactNode } from "react";
 import { socket } from "@/lib/socket-client";
+import { ApiResponse } from "@/types/apiResponse";
 
 type SocketContextType = typeof socket;
 
@@ -13,19 +14,30 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         const response = await fetch("/api/socket-token");
         console.log("socket token resp: ", response);
 
-        if (!response.ok) {
-          throw new Error("Failed to authenticate socket");
+        if (response.status === 401) {
+          return;
         }
 
-        const { token } = await response.json();
+        if (!response.ok) {
+          throw new Error(`Failed to authenticate socket: ${response.status}`);
+        }
+
+        const result: ApiResponse<{ token: string }> = await response.json();
+        console.log("socket token result: ", result);
+
+        if (!result.success || !result.data?.token) {
+          throw new Error(result.message ?? "Failed to authenticate socket");
+        }
 
         socket.auth = {
-          token,
+          token: result.data.token,
         };
 
-        socket.connect();
+        if (!socket.connected) {
+          socket.connect();
+        }
       } catch (error) {
-        console.error("Socket authentication failed:", error);
+        console.error("Socket connection failed:", error);
       }
     };
 

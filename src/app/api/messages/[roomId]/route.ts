@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { messages, rooms, roomPlayers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requiredUser } from "@/server/auth/requiredUser";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { createMessageSchema } from "@/server/validators/messages";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 

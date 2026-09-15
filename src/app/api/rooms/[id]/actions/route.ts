@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { gameEvents, rooms, roomPlayers, characters } from "@/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { requiredUser } from "@/server/auth/requiredUser";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { submitActionSchema } from "@/server/validators/gameEvents";
 import { GameEventPayload } from "@/types/gameEvents";

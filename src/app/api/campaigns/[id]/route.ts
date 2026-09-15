@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { updateCampaignSchema } from "@/server/validators/campaigns";
 import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 

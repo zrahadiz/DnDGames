@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { createCampaignSchema } from "@/server/validators/campaigns";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 

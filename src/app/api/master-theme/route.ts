@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { themes } from "@/db/schema";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { createThemeSchema } from "@/server/validators/themes";
 

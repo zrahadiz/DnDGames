@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/db";
 import { rooms, RoomStatus, roomPlayers, characters } from "@/db/schema";
 import { eq, and, ilike, count } from "drizzle-orm";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { createRoomWithCharacterSchema } from "@/server/validators/rooms";
 import { requiredUser } from "@/server/auth/requiredUser";
 

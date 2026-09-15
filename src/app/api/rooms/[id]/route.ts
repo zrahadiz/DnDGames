@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { rooms } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requiredUser } from "@/server/auth/requiredUser";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 
 type Params = Promise<{ id: string }>;

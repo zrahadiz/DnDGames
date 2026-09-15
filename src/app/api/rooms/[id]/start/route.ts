@@ -4,7 +4,7 @@ import { gameEvents, messages, roomPlayers, rooms } from "@/db/schema";
 import { generateOpeningNarrative } from "@/server/ai/service/generateOpeningNarrative";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
-import { apiResponse } from "@/server/utils/apiResponse";
+import { apiResponse } from "@/types/apiResponse";
 import { eq } from "drizzle-orm";
 
 type Params = Promise<{ id: string }>;
