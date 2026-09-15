@@ -10,7 +10,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!socket.connected) socket.connect();
 
-    socket.on("connect", () => console.log("✅ Connected:", socket.id));
+    socket.on("connect", () => {
+      const engine = socket.io.engine;
+
+      console.log("✅ Socket connected:", socket.id);
+      console.log("Initial transport:", engine.transport.name);
+
+      engine.once("upgrade", (transport) => {
+        console.log("⬆️ Transport upgraded:", transport.name);
+      });
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("❌ Socket connect error:", error.message);
+      console.error(error);
+    });
+
     socket.on("disconnect", () => console.log("❌ Disconnected"));
 
     return () => {

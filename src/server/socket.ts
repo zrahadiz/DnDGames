@@ -24,7 +24,7 @@ const io = new Server(httpServer, {
     origin: allowedOrigins,
     credentials: true,
   },
-  transports: ["polling", "websocket"],
+  // transports: ["polling", "websocket"],
 });
 
 // Keep track of socket ↔ user mapping

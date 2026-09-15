@@ -6,6 +6,7 @@ import { guestSessions } from "@/db/schema";
 import { hashToken } from "@/lib/encryptData";
 
 export async function getUserFromCookie(cookieHeader?: string) {
+  console.log("cookie from getuserfromcookie", cookieHeader);
   if (!cookieHeader) return null;
 
   const parsedCookies = parse(cookieHeader);

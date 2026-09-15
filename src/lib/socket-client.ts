@@ -6,8 +6,11 @@ const socket: Socket =
   (globalThis as any).socket ||
   io(URL, {
     autoConnect: false,
-    transports: ["polling", "websocket"],
+    // transports: ["polling", "websocket"],
     withCredentials: true,
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
   });
 
 if (process.env.NODE_ENV === "development") {
