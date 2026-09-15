@@ -6,9 +6,10 @@ import { db } from "@/db";
 import { roomPlayers, rooms } from "@/db/schema";
 import type { GameEventWithRelations, TurnProgress } from "@/types/gameEvents";
 import { eq, and, ne, asc } from "drizzle-orm";
-import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 import { setIO } from "@/lib/socket-server";
+import { verifySocketToken } from "@/lib/socket-auth";
 import { getRoomState } from "./rooms/getRoomState";
+// import { getUserFromCookie } from "./auth/getUserDataFromCookie";
 
 const PORT = Number(process.env.PORT) || 3001;
 
@@ -216,30 +217,44 @@ export async function transferHostIfNeeded(
 
 io.use(async (socket, next) => {
   try {
-    const cookieHeader = socket.handshake.headers.cookie;
-
-    const currentUser = await getUserFromCookie(cookieHeader);
-
-    if (!currentUser) {
+    const token = socket.handshake.auth.token;
+    console.log("token: ", token);
+    if (!token || typeof token !== "string") {
       return next(new Error("Unauthorized"));
     }
-    socket.data.user = currentUser;
+
+    const authData = await verifySocketToken(token);
+    console.log("authdata: ", authData);
+
+    socket.data.user = {
+      type: authData.type,
+      user: {
+        id: authData.userId,
+      },
+    };
 
     next();
   } catch (error) {
+    console.error("Socket authentication failed:", error);
+
     next(new Error("Authentication failed"));
   }
 });
 
 io.on("connection", (socket) => {
-  console.log("connected:", socket.data.user?.user.name);
+  console.log("socket data: ", socket.data);
+  console.log("socket id: ", socket.id);
+  console.log("User connected:", {
+    userId: socket.data.user?.user.id,
+    type: socket.data.user?.type,
+    socketId: socket.id,
+  });
   console.log("total connections:", io.engine.clientsCount);
 
   socket.on("test", async ({ roomId }) => {
     const currentUser = socket.data.user;
     if (!currentUser) return;
     const userId = currentUser.user.id;
-    console.log("DATABASE_URL:", process.env.DATABASE_URL);
     console.log("Test event received:", { roomId, userId });
   });
 

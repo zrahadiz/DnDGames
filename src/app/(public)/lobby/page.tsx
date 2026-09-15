@@ -222,7 +222,7 @@ export default function Home() {
   }, [search, status, campaignId, page, limit]);
 
   useEffect(() => {
-    socket.connect();
+    // socket.connect();
     fetchRooms();
 
     socket.on("connect", () => {

@@ -8,29 +8,49 @@ const SocketContext = createContext<SocketContextType | null>(null);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    if (!socket.connected) socket.connect();
+    const connectSocket = async () => {
+      try {
+        const response = await fetch("/api/socket-token");
+        console.log("socket token resp: ", response);
 
-    socket.on("connect", () => {
-      const engine = socket.io.engine;
+        if (!response.ok) {
+          throw new Error("Failed to authenticate socket");
+        }
 
-      console.log("✅ Socket connected:", socket.id);
-      console.log("Initial transport:", engine.transport.name);
+        const { token } = await response.json();
 
-      engine.once("upgrade", (transport) => {
-        console.log("⬆️ Transport upgraded:", transport.name);
-      });
-    });
+        socket.auth = {
+          token,
+        };
 
-    socket.on("connect_error", (error) => {
-      console.error("❌ Socket connect error:", error.message);
-      console.error(error);
-    });
+        socket.connect();
+      } catch (error) {
+        console.error("Socket authentication failed:", error);
+      }
+    };
 
-    socket.on("disconnect", () => console.log("❌ Disconnected"));
+    connectSocket();
+
+    const onConnect = () => {
+      console.log("✅ Connected:", socket.id);
+    };
+
+    const onDisconnect = () => {
+      console.log("❌ Disconnected");
+    };
+
+    const onConnectError = (error: Error) => {
+      console.error("❌ Socket error:", error.message);
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
 
     return () => {
-      socket.off("connect");
-      socket.off("disconnect");
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
     };
   }, []);
 
