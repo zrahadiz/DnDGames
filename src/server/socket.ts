@@ -19,7 +19,7 @@ const allowedOrigins = [
 
 const httpServer = createServer();
 
-const io = new Server(PORT, {
+const io = new Server(httpServer, {
   cors: {
     origin: allowedOrigins,
     credentials: true,
