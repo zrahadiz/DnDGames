@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import D20Icon from "@/components/icons/d20Icon";
 import CornerRune from "@/components/ornaments/cornerRune";
@@ -9,38 +9,8 @@ import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
 import GoldBar from "@/components/ornaments/goldBar";
 import { BookOpen, BrainCircuit, Castle, Swords } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import api from "@/lib/axios";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "@/lib/toast";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DESIGN TOKENS — share these across every page
-// ─────────────────────────────────────────────────────────────────────────────
-// Background base      #0a0806   (near-black parchment)
-// Surface card         #1a1208   (dark leather)
-// Surface card alt     #120d1a   (dark arcane)
-// Border gold          rgba(200,169,110,0.25)
-// Border gold hover    rgba(200,169,110,0.50)
-// Border purple        rgba(167,139,250,0.20)
-// Border purple hover  rgba(167,139,250,0.45)
-//
-// Text gold primary    #e8d5a3
-// Text gold secondary  #c8a96e
-// Text gold muted      #8a6f3e
-// Text purple          #c4b5fd
-// Text body            #9a8878
-// Text faint           #5a4830
-//
-// Accent gold          #c8a96e
-// Accent purple        #7c3aed
-// Accent crimson       #991b1b
-// Accent teal          #0d9488
-//
-// Gradient atm top     radial-gradient(ellipse 80% 60% at 50% 0%, #3d1f05, transparent)
-// Gradient atm left    radial-gradient(ellipse 60% 40% at 20% 100%, #1a0e2e, transparent)
-// Gradient atm right   radial-gradient(ellipse 50% 50% at 80% 100%, #0d1f0d, transparent)
-// Grid texture         linear-gradient(#c8a96e 1px, transparent 1px) 48px 48px, opacity 0.04
-// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── FEATURE CARDS ───────────────────────────────────────────────────────────
 const features = [
@@ -130,30 +100,26 @@ const campaigns = [
   },
 ];
 
+function SearchParamsHandler() {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("reason") === "already-authenticated") {
+      toast("You're already signed in. Welcome back!", {
+        type: "info",
+      });
+    }
+  }, [searchParams]);
+
+  return null;
+}
+
 // ─── ROOT PAGE ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [hovered, setHovered] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
   const { user, fetchUser } = useAuthStore();
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    if (searchParams.get("reason") == "already-authenticated") {
-      toast("You're already signed in. Welcome back!", {
-        type: "info",
-      });
-    }
-  }, [mounted, searchParams]);
 
   const loginHandle = async () => {
     setIsPending(true);
@@ -173,10 +139,13 @@ export default function LandingPage() {
 
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [fetchUser]);
 
   return (
     <>
+      <Suspense fallback={null}>
+        <SearchParamsHandler />
+      </Suspense>
       <main>
         {/* ─── HERO ──────────────────────────────────────────────────────────────────── */}
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">
