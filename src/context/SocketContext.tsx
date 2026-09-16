@@ -11,7 +11,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const connectSocket = async () => {
       try {
-        const response = await fetch("/api/socket-token");
+        const response = await fetch("/socket-token");
         console.log("socket token resp: ", response);
 
         if (response.status === 401) {
