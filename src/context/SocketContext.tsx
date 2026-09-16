@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useEffect, ReactNode } from "react";
 import { socket } from "@/lib/socket-client";
 import { ApiResponse } from "@/types/apiResponse";
+import api from "@/lib/axios";
+import axios from "axios";
 
 type SocketContextType = typeof socket;
 
@@ -11,32 +13,27 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const connectSocket = async () => {
       try {
-        const response = await fetch("/socket-token");
-        console.log("socket token resp: ", response);
+        const { data } =
+          await api.get<ApiResponse<{ token: string }>>("/socket-token");
 
-        if (response.status === 401) {
-          return;
-        }
+        console.log("socket token result:", data);
 
-        if (!response.ok) {
-          throw new Error(`Failed to authenticate socket: ${response.status}`);
-        }
-
-        const result: ApiResponse<{ token: string }> = await response.json();
-        console.log("socket token result: ", result);
-
-        if (!result.success || !result.data?.token) {
-          throw new Error(result.message ?? "Failed to authenticate socket");
+        if (!data.success || !data.data?.token) {
+          throw new Error(data.message ?? "Failed to authenticate socket");
         }
 
         socket.auth = {
-          token: result.data.token,
+          token: data.data.token,
         };
 
         if (!socket.connected) {
           socket.connect();
         }
       } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          return;
+        }
+
         console.error("Socket connection failed:", error);
       }
     };
