@@ -11,6 +11,11 @@ import { BookOpen, BrainCircuit, Castle, Swords } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "@/lib/toast";
+import { CampaignWithRelations } from "@/types/campaigns";
+import api from "@/lib/axios";
+import { getErrorMessage } from "@/lib/errors";
+import CampaignCard from "@/components/campaigns/campaignCard";
+import Loading from "@/components/feedback/loading";
 
 // ─── FEATURE CARDS ───────────────────────────────────────────────────────────
 const features = [
@@ -72,34 +77,6 @@ const steps = [
   },
 ];
 
-// ─── CAMPAIGNS SHOWCASE ───────────────────────────────────────────────────────
-const campaigns = [
-  {
-    title: "The Crimson Sanctum",
-    genre: "Horror",
-    plays: "4.2k",
-    rating: "4.9",
-    author: "VoidWalker",
-    desc: "Ancient vampiric nobility have awakened beneath the city. Only the brave may descend.",
-  },
-  {
-    title: "Shards of the Sunken God",
-    genre: "Epic",
-    plays: "8.1k",
-    rating: "5.0",
-    author: "ArcaneForge",
-    desc: "A shattered deity's power scatters across the mortal realm. Collect the shards. Become legend.",
-  },
-  {
-    title: "The Merchant's Gambit",
-    genre: "Intrigue",
-    plays: "2.9k",
-    rating: "4.7",
-    author: "SilverTongue",
-    desc: "Politics, poison, and profit. Navigate the guilds of Varantis or be consumed by them.",
-  },
-];
-
 function SearchParamsHandler() {
   const searchParams = useSearchParams();
 
@@ -114,10 +91,13 @@ function SearchParamsHandler() {
   return null;
 }
 
-// ─── ROOT PAGE ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [hovered, setHovered] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [campaigns, setCampaigns] = useState<CampaignWithRelations[]>([]);
+  const [loadingState, setLoadingState] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
+
   const { user, fetchUser } = useAuthStore();
   const router = useRouter();
 
@@ -137,9 +117,38 @@ export default function LandingPage() {
     }
   };
 
+  const getCampaigns = async () => {
+    console.time("fetch campaigns");
+    setLoadingState(true);
+    setLoadingText("Getting Campaigns...");
+    try {
+      const { data } = await api.get("campaigns", {
+        params: {
+          page: 1,
+          limit: 3,
+        },
+      });
+      console.timeEnd("fetch campaigns");
+      // console.log(data);
+      setCampaigns(data.data);
+    } catch (error) {
+      console.error(error);
+      toast(getErrorMessage(error), {
+        type: "error",
+      });
+    } finally {
+      setLoadingState(false);
+      setLoadingText("");
+    }
+  };
+
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    getCampaigns();
+  }, []);
 
   return (
     <>
@@ -147,6 +156,7 @@ export default function LandingPage() {
         <SearchParamsHandler />
       </Suspense>
       <main>
+        <Loading status={loadingState} fullscreen text={loadingText} />
         {/* ─── HERO ──────────────────────────────────────────────────────────────────── */}
         <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 py-20 overflow-hidden">
           <Embers />
@@ -231,7 +241,7 @@ export default function LandingPage() {
               <button
                 onClick={loginHandle}
                 disabled={isPending}
-                className="px-8 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
+                className="px-8 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1 cursor-pointer"
                 style={{
                   fontFamily: "'Cinzel', serif",
                   background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
@@ -247,7 +257,7 @@ export default function LandingPage() {
             )}
             <a href="#how-to-play">
               <button
-                className="px-8 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-400/40"
+                className="px-8 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 hover:border-purple-400/40 cursor-pointer"
                 style={{
                   fontFamily: "'Cinzel', serif",
                   background: "transparent",
@@ -382,7 +392,7 @@ export default function LandingPage() {
           </div>
         </section>
         {/* // ─── Stats ──────────────────────────────────────────────────────────────────── */}
-        <section className="relative py-20 px-6 overflow-hidden">
+        {/* <section className="relative py-20 px-6 overflow-hidden">
           <GoldBar />
           <div
             className="absolute inset-0"
@@ -418,7 +428,7 @@ export default function LandingPage() {
             </div>
           </div>
           <GoldBar />
-        </section>
+        </section> */}
         {/* // ─── How to Play ──────────────────────────────────────────────────────────────────── */}
         <section id="how-to-play" className="relative py-20 px-6">
           {/* Section glow */}
@@ -553,102 +563,22 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              {campaigns.map((c, i) => (
-                <div
-                  key={i}
-                  onMouseEnter={() => setHovered(i)}
-                  onMouseLeave={() => setHovered(null)}
-                  className="rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer"
-                  style={{
-                    background: "linear-gradient(160deg, #1a1208, #120d1a)",
-                    border: `1px solid ${hovered === i ? "rgba(200,169,110,0.45)" : "rgba(200,169,110,0.15)"}`,
-                    transform: hovered === i ? "translateY(-6px)" : "none",
-                    boxShadow:
-                      hovered === i
-                        ? "0 16px 40px rgba(0,0,0,0.4), 0 0 30px rgba(200,169,110,0.08)"
-                        : "none",
-                  }}
-                >
-                  {/* Card header band */}
-                  <div
-                    className="h-1.5"
-                    style={{
-                      background: `linear-gradient(90deg, rgba(200,169,110,0.6), rgba(124,58,237,0.4))`,
-                    }}
-                  />
-
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span
-                        className="text-xs px-2.5 py-1 rounded-full"
-                        style={{
-                          fontFamily: "'Cinzel', serif",
-                          background: "rgba(200,169,110,0.1)",
-                          border: "1px solid rgba(200,169,110,0.2)",
-                          color: "#8a6f3e",
-                          letterSpacing: "0.1em",
-                        }}
-                      >
-                        {c.genre}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "serif",
-                          color: "#c8a96e",
-                          fontSize: "13px",
-                        }}
-                      >
-                        ★ {c.rating}
-                      </span>
-                    </div>
-
-                    <h3
-                      className="text-lg font-bold mb-2"
-                      style={{
-                        fontFamily: "'Cinzel', serif",
-                        color: "#e8d5a3",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {c.title}
-                    </h3>
-                    <p
-                      className="text-sm leading-relaxed mb-4"
-                      style={{
-                        fontFamily: "Georgia, serif",
-                        color: "#7a6548",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      {c.desc}
-                    </p>
-
-                    <div
-                      className="flex items-center justify-between pt-4"
-                      style={{ borderTop: "1px solid rgba(200,169,110,0.1)" }}
-                    >
-                      <span
-                        className="text-xs"
-                        style={{ color: "#5a4830", fontFamily: "serif" }}
-                      >
-                        by {c.author}
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: "#5a4830", fontFamily: "serif" }}
-                      >
-                        {c.plays} plays
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              {campaigns.map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  campaign={c}
+                  isOwner={c.createdBy === user?.id}
+                  onPlay={(c) =>
+                    router.push(`/rooms/create?campaignId=${c.id}`)
+                  }
+                />
               ))}
             </div>
 
             <div className="text-center">
               <Link href="/campaigns">
                 <button
-                  className="px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:-translate-y-0.5"
+                  className="px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
                   style={{
                     fontFamily: "'Cinzel', serif",
                     background: "transparent",
@@ -709,7 +639,7 @@ export default function LandingPage() {
                 <button
                   onClick={loginHandle}
                   disabled={isPending}
-                  className="px-10 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1"
+                  className="px-10 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1 cursor-pointer"
                   style={{
                     fontFamily: "'Cinzel', serif",
                     background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
@@ -725,7 +655,7 @@ export default function LandingPage() {
                 <button
                   onClick={loginHandle}
                   disabled={isPending}
-                  className="px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5"
+                  className="px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
                   style={{
                     fontFamily: "'Cinzel', serif",
                     background: "transparent",

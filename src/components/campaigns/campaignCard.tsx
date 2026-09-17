@@ -10,11 +10,9 @@ type Props = {
 
   isOwner: boolean;
 
-  onEdit: (c: CampaignWithRelations) => void;
-
-  onDelete: (c: CampaignWithRelations) => void;
-
-  onPlay: (c: CampaignWithRelations) => void;
+  onEdit?: (c: CampaignWithRelations) => void;
+  onDelete?: (c: CampaignWithRelations) => void;
+  onPlay?: (c: CampaignWithRelations) => void;
 };
 
 export default function CampaignCard({
@@ -172,77 +170,56 @@ export default function CampaignCard({
           </div>
 
           <div className="flex items-center gap-2">
-            {isOwner && (
-              <>
-                {/* Edit */}
-                <button
-                  onClick={() => onEdit(campaign)}
-                  title="Edit"
-                  className="
-                  rounded-lg border border-[rgba(200,169,110,0.22)]
-                  bg-transparent p-1.5
-                  text-[#8a6f3e]
-                  transition hover:bg-[rgba(200,169,110,0.08)] cursor-pointer
-                "
+            {/* Edit */}
+            {isOwner && onEdit && (
+              <button
+                onClick={() => onEdit(campaign)}
+                title="Edit"
+                className="rounded-lg border border-[rgba(200,169,110,0.22)] bg-transparent p-1.5 text-[#8a6f3e] transition hover:bg-[rgba(200,169,110,0.08)] cursor-pointer"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
                 >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  >
-                    <path d="M11 2l3 3-8 8H3v-3l8-8z" />
-                  </svg>
-                </button>
+                  <path d="M11 2l3 3-8 8H3v-3l8-8z" />
+                </svg>
+              </button>
+            )}
 
-                {/* Delete */}
-                <button
-                  onClick={() => onDelete(campaign)}
-                  title="Delete"
-                  className="
-                  rounded-lg border border-[rgba(239,68,68,0.22)]
-                  bg-transparent p-1.5
-                  text-[#f87171]
-                  transition hover:bg-[rgba(239,68,68,0.08)] cursor-pointer
-                "
+            {isOwner && onDelete && (
+              <button
+                onClick={() => onDelete(campaign)}
+                title="Delete"
+                className="rounded-lg border border-[rgba(239,68,68,0.22)] bg-transparent p-1.5 text-[#f87171] transition hover:bg-[rgba(239,68,68,0.08)] cursor-pointer"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width="13"
+                  height="13"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
                 >
-                  <svg
-                    viewBox="0 0 16 16"
-                    width="13"
-                    height="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  >
-                    <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" />
-                  </svg>
-                </button>
-              </>
+                  <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" />
+                </svg>
+              </button>
             )}
 
             {/* Play */}
-            <button
-              onClick={() => onPlay(campaign)}
-              className="
-              rounded-[10px]
-              border border-[rgba(200,169,110,0.35)]
-              bg-[linear-gradient(135deg,#2a1f0a,#1e1808)]
-              px-3.5 py-[7px]
-              font-['Cinzel']
-              text-xs tracking-[0.05em]
-              text-[#d4b87a]
-              transition
-              hover:brightness-110
-              active:scale-[0.98]
-              cursor-pointer
-            "
-            >
-              Play
-            </button>
+            {onPlay && (
+              <button
+                onClick={() => onPlay(campaign)}
+                className="rounded-[10px] border border-[rgba(200,169,110,0.35)] bg-[linear-gradient(135deg,#2a1f0a,#1e1808)] px-3.5 py-[7px] font-['Cinzel'] text-xs tracking-[0.05em] text-[#d4b87a] transition hover:brightness-110 active:scale-[0.98] cursor-pointer"
+              >
+                Play
+              </button>
+            )}
           </div>
         </div>
       </div>
