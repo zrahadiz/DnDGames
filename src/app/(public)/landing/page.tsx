@@ -124,7 +124,7 @@ export default function LandingPage() {
   const loginHandle = async () => {
     setIsPending(true);
     try {
-      console.log("Current user:", user);
+      // console.log("Current user:", user);
       if (user) {
         router.push("/lobby");
       } else {

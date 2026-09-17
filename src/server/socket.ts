@@ -218,13 +218,23 @@ export async function transferHostIfNeeded(
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    console.log("token: ", token);
+
+    console.log("Socket auth attempt:", {
+      socketId: socket.id,
+      hasToken: !!token,
+    });
+
     if (!token || typeof token !== "string") {
       return next(new Error("Unauthorized"));
     }
 
     const authData = await verifySocketToken(token);
-    console.log("authdata: ", authData);
+
+    console.log("Socket authenticated:", {
+      socketId: socket.id,
+      userId: authData.userId,
+      type: authData.type,
+    });
 
     socket.data.user = {
       type: authData.type,
@@ -242,13 +252,13 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("socket data: ", socket.data);
-  console.log("socket id: ", socket.id);
-  console.log("User connected:", {
-    userId: socket.data.user?.user.id,
-    type: socket.data.user?.type,
-    socketId: socket.id,
-  });
+  // console.log("socket data: ", socket.data);
+  // console.log("socket id: ", socket.id);
+  // console.log("User connected:", {
+  //   userId: socket.data.user?.user.id,
+  //   type: socket.data.user?.type,
+  //   socketId: socket.id,
+  // });
   console.log("total connections:", io.engine.clientsCount);
 
   socket.on("test", async ({ roomId }) => {

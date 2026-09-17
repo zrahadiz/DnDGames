@@ -7,7 +7,7 @@ const ai = new GoogleGenAI({
 
 export async function POST(req: Request) {
   const body = await req.json();
-  console.log("Received prompt:", body.prompt);
+  // console.log("Received prompt:", body.prompt);
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",

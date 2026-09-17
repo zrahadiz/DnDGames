@@ -141,11 +141,11 @@ export default function Home() {
     campaignId: string,
     roomCode: boolean,
   ) => {
-    console.log("openJoinDialog called with:", {
-      roomId,
-      campaignId,
-      roomCode,
-    });
+    // console.log("openJoinDialog called with:", {
+    //   roomId,
+    //   campaignId,
+    //   roomCode,
+    // });
     setLoadingState(true);
     setLoadingText("Fetching character suggestions...");
 

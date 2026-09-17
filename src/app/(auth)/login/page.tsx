@@ -48,7 +48,7 @@ export default function LoginPage() {
         provider: "google",
         callbackURL: "/lobby",
       });
-      console.log("Google login response:", data);
+      // console.log("Google login response:", data);
     } catch (error) {
       console.error("Google login error:", error);
     } finally {
@@ -65,7 +65,7 @@ export default function LoginPage() {
       if (data.success) {
         router.replace("/lobby");
       }
-      console.log("Guest login response:", data);
+      // console.log("Guest login response:", data);
     } catch (error) {
       console.error("Guest login error:", error);
     } finally {

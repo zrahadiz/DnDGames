@@ -88,7 +88,7 @@ export default function Room() {
     setLoadingText("Mengambil Pesan");
     try {
       const { data } = await api.get(`/rooms/${roomId}/actions`);
-      console.log("fetched messages:", data);
+      // console.log("fetched messages:", data);
       setGameEvents(data.data.events);
       setTurnProgress(data.data.turnProgress);
     } catch (error) {
@@ -122,7 +122,7 @@ export default function Room() {
       setIsSubmitting(true);
 
       const { data } = await api.post(`/rooms/${roomId}/actions`, payload);
-      console.log("Submitted action:", data);
+      // console.log("Submitted action:", data);
       const updatedTurnProgress = data.data.turnProgress;
       setTurnProgress(updatedTurnProgress);
 
@@ -161,7 +161,7 @@ export default function Room() {
 
     try {
       const { data } = await api.post(`/rooms/${roomId}/resolve-turn`);
-      console.log("Turn resolved:", data);
+      // console.log("Turn resolved:", data);
 
       socket.emit("game_event_created", {
         roomId,
@@ -214,7 +214,7 @@ export default function Room() {
     if (!roomId) return;
 
     socket.emit("leave_room", { roomId }, (response: { success: boolean }) => {
-      console.log("leave_room response:", response);
+      // console.log("leave_room response:", response);
       if (response.success) {
         router.push("/lobby");
       }
@@ -228,7 +228,7 @@ export default function Room() {
       const { data } = await api.post(`/rooms/${roomId}/kick`, {
         userTargetId: targetUserId,
       });
-      console.log("Kick player response:", data);
+      // console.log("Kick player response:", data);
       if (data.success) {
         console.log("Emitting sync_room_state after kicking player");
         socket.emit("sync_room_state", {
@@ -250,7 +250,7 @@ export default function Room() {
       switch (update.type) {
         case "room_state_updated":
           if (update.kick) {
-            console.log("user: ", user);
+            // console.log("user: ", user);
             if (!user?.id) {
               return;
             }
@@ -301,7 +301,7 @@ export default function Room() {
     fetchRooms();
     fetchEvents();
 
-    console.log("Joining room", roomId);
+    // console.log("Joining room", roomId);
     socket.emit("join_room", {
       roomId,
     });
@@ -310,7 +310,7 @@ export default function Room() {
   useEffect(() => {
     const handleAiGeneration = ({ started }: { started: boolean }) => {
       setIsAiThinking(started);
-      console.log("ai is thinking: ", isAiThinking);
+      // console.log("ai is thinking: ", isAiThinking);
     };
 
     socket.on("generate_ai_response", handleAiGeneration);
@@ -328,7 +328,7 @@ export default function Room() {
       event: GameEventWithRelations;
       turnProgress?: TurnProgress;
     }) => {
-      console.log("received game event", event);
+      // console.log("received game event", event);
       if (turnProgress) {
         setTurnProgress(turnProgress);
       }

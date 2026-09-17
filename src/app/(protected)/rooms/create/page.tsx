@@ -101,12 +101,12 @@ export default function CreateRoom() {
             .map((item) => [item.key, item.value]),
         ),
       };
-      console.log("payload: ", payload);
+      // console.log("payload: ", payload);
       const { data } = isEdit
         ? await api.patch(`/campaigns/${id}`, payload)
         : await api.post("/campaigns", payload);
 
-      console.log("resp:", data);
+      // console.log("resp:", data);
       setCreateCampaignOpen(false);
       handleCampaignSelect(data.data);
       toast(

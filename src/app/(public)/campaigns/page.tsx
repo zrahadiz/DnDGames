@@ -65,7 +65,7 @@ export default function CampaignsPage() {
         },
       });
       console.timeEnd("fetch campaigns");
-      console.log(data);
+      // console.log(data);
       setCampaigns(data.data);
       setPagination(data.pagination);
     } catch (error) {
@@ -111,12 +111,12 @@ export default function CampaignsPage() {
             .map((item) => [item.key, item.value]),
         ),
       };
-      console.log("payload: ", payload);
+      // console.log("payload: ", payload);
       const { data } = isEdit
         ? await api.patch(`/campaigns/${id}`, payload)
         : await api.post("/campaigns", payload);
 
-      console.log("resp:", data);
+      // console.log("resp:", data);
       if (isEdit) {
         setEditTarget(null);
       } else {

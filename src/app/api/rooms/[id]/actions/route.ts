@@ -58,7 +58,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
       ),
     });
 
-    console.log("Submitted Actions:", submittedActions);
+    // console.log("Submitted Actions:", submittedActions);
 
     const data = await db.query.gameEvents.findMany({
       where: eq(gameEvents.roomId, roomId),

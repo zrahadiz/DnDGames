@@ -16,7 +16,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         const { data } =
           await api.get<ApiResponse<{ token: string }>>("/socket-token");
 
-        console.log("socket token result:", data);
+        // console.log("socket token result:", data);
 
         if (!data.success || !data.data?.token) {
           throw new Error(data.message ?? "Failed to authenticate socket");

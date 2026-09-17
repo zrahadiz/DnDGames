@@ -113,11 +113,11 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    console.log("body:", body);
+    // console.log("body:", body);
 
     const result = createCampaignSchema.safeParse(body);
 
-    console.log("result:", result);
+    // console.log("result:", result);
 
     if (!result.success) {
       return apiResponse(400, {

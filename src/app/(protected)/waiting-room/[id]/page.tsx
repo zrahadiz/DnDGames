@@ -47,7 +47,7 @@ export default function WaitingRoom() {
     try {
       const { data } = await api.get(`/rooms/${roomId}`);
       setRoom(data.data);
-      console.log("Fetched room data:", data.data);
+      // console.log("Fetched room data:", data.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     } finally {
@@ -61,7 +61,7 @@ export default function WaitingRoom() {
     setLoadingText("Leaving room...");
     try {
       const { data } = await api.delete(`/rooms/${roomId}/leave`);
-      console.log("Left room:", data);
+      // console.log("Left room:", data);
       if (data.success) {
         console.log("Emitting sync_room_state after leaving room");
         socket.emit("sync_room_state", {
@@ -84,7 +84,7 @@ export default function WaitingRoom() {
       const { data } = await api.post(`/rooms/${roomId}/kick`, {
         userTargetId: targetUserId,
       });
-      console.log("Kick player response:", data);
+      // console.log("Kick player response:", data);
       if (data.success) {
         console.log("Emitting sync_room_state after kicking player");
         socket.emit("sync_room_state", {
@@ -101,10 +101,10 @@ export default function WaitingRoom() {
   };
 
   const startGameHandler = async () => {
-    console.log("Current User Player:", currentPlayer);
-    console.log("Is Host (from handler):", isHost);
-    console.log("Current User ID:", user?.id);
-    console.log("Room ID:", roomId);
+    // console.log("Current User Player:", currentPlayer);
+    // console.log("Is Host (from handler):", isHost);
+    // console.log("Current User ID:", user?.id);
+    // console.log("Room ID:", roomId);
     if (isHost) {
       // Host is starting the game
       setLoadingState(true);
@@ -153,11 +153,11 @@ export default function WaitingRoom() {
 
   useEffect(() => {
     const handleRoomUpdate = (update: RoomUpdate) => {
-      console.log("Received room update:", update);
+      // console.log("Received room update:", update);
       switch (update.type) {
         case "room_state_updated":
           if (update.kick) {
-            console.log("user: ", user);
+            // console.log("user: ", user);
             if (!user?.id) {
               return;
             }
@@ -179,7 +179,7 @@ export default function WaitingRoom() {
           break;
 
         case "room_deleted":
-          console.log("Room deleted:", update.roomId);
+          // console.log("Room deleted:", update.roomId);
           if (update.roomId === roomId) {
             alert("The room has been deleted. Returning to lobby.");
             router.replace("/lobby");
