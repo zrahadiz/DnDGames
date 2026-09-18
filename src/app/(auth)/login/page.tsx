@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { createAuthClient } from "better-auth/client";
-import { ShieldAlert, Pickaxe } from "lucide-react";
+import { ShieldAlert, Pickaxe, ArrowLeftFromLine } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Loading from "@/components/feedback/loading";
 import CornerRune from "@/components/ornaments/cornerRune";
@@ -12,6 +12,7 @@ import Embers from "@/components/ornaments/embers";
 import GoogleIcon from "@/components/icons/googleIcon";
 import D20Icon from "@/components/icons/d20Icon";
 import { toast } from "@/lib/toast";
+import { Button } from "@/components/ui/button";
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function LoginPage() {
@@ -290,6 +291,16 @@ export default function LoginPage() {
                 Scrolls of Privacy
               </a>
             </p>
+            <div className="flex items-center justify-center mt-4">
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/lobby")}
+                className="group h-auto px-4 py-2 rounded-lg text-xs font-medium text-[#8a6f3e] hover:text-[#d4b87a] hover:bg-[rgba(200,169,110,0.06)] border border-transparent hover:border-[rgba(200,169,110,0.18)] transition-all duration-200 cursor-pointer"
+              >
+                <ArrowLeftFromLine className="size-3.5 transition-transform duration-200 group-hover:-translate-x-1" />
+                Back
+              </Button>
+            </div>
           </div>
 
           {/* Bottom ornamental bar */}

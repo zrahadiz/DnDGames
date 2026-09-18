@@ -52,7 +52,7 @@ export default function CampaignsPage() {
     useState<CampaignWithRelations | null>(null);
 
   const getCampaigns = async () => {
-    console.time("fetch campaigns");
+    // console.time("fetch campaigns");
     setLoadingState(true);
     setLoadingText("Getting Campaigns...");
     try {
@@ -64,7 +64,7 @@ export default function CampaignsPage() {
           limit,
         },
       });
-      console.timeEnd("fetch campaigns");
+      // console.timeEnd("fetch campaigns");
       // console.log(data);
       setCampaigns(data.data);
       setPagination(data.pagination);

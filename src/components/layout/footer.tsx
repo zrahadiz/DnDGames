@@ -22,7 +22,7 @@ export default function Footer() {
           </span>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6">
+        {/* <div className="flex flex-wrap justify-center gap-6">
           {["Privacy", "Terms", "Contact", "Discord"].map((l) => (
             <a
               key={l}
@@ -37,13 +37,13 @@ export default function Footer() {
               {l}
             </a>
           ))}
-        </div>
+        </div> */}
 
         <p
           className="text-xs"
           style={{ fontFamily: "serif", color: "#3a2a14", fontStyle: "italic" }}
         >
-          © 2025 Tavern Gate. Guided by Ancient Intelligence.
+          © 2025 Tavern Gate.
         </p>
       </div>
     </footer>

@@ -118,7 +118,7 @@ export default function LandingPage() {
   };
 
   const getCampaigns = async () => {
-    console.time("fetch campaigns");
+    // console.time("fetch campaigns");
     setLoadingState(true);
     setLoadingText("Getting Campaigns...");
     try {
@@ -128,7 +128,7 @@ export default function LandingPage() {
           limit: 3,
         },
       });
-      console.timeEnd("fetch campaigns");
+      // console.timeEnd("fetch campaigns");
       // console.log(data);
       setCampaigns(data.data);
     } catch (error) {
@@ -529,70 +529,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-        {/* // ─── Campaigns ──────────────────────────────────────────────────────────────────── */}
-        <section id="campaigns" className="relative pb-20 px-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <p
-                className="text-xs tracking-[0.3em] uppercase mb-3"
-                style={{ color: "#8a6f3e", fontFamily: "serif" }}
-              >
-                ✦ The Codex ✦
-              </p>
-              <h2
-                className="text-3xl sm:text-4xl font-bold mb-4"
-                style={{
-                  fontFamily: "'Cinzel', serif",
-                  color: "#e8d5a3",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                Featured Campaigns
-              </h2>
-              <p
-                className="text-sm max-w-md mx-auto mb-6"
-                style={{
-                  fontFamily: "Georgia, serif",
-                  color: "#7a6548",
-                  fontStyle: "italic",
-                }}
-              >
-                Forged by the community. Approved by legend.
-              </p>
-              <OrnamentalDivider className="max-w-xs mx-auto" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              {campaigns.map((c) => (
-                <CampaignCard
-                  key={c.id}
-                  campaign={c}
-                  isOwner={c.createdBy === user?.id}
-                  onPlay={(c) =>
-                    router.push(`/rooms/create?campaignId=${c.id}`)
-                  }
-                />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <Link href="/campaigns">
-                <button
-                  className="px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-                  style={{
-                    fontFamily: "'Cinzel', serif",
-                    background: "transparent",
-                    border: "1px solid rgba(200,169,110,0.3)",
-                    color: "#8a6f3e",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  Browse All Campaigns →
-                </button>
-              </Link>
-            </div>
-          </div>
-        </section>
         {/* // ─── FINAL CTA ──────────────────────────────────────────────────────────────── */}
         <section className="relative pb-20 px-6 text-center overflow-hidden">
           <div
@@ -668,6 +604,70 @@ export default function LandingPage() {
                 </button>
               </div>
             )}
+          </div>
+        </section>
+        {/* // ─── Campaigns ──────────────────────────────────────────────────────────────────── */}
+        <section id="campaigns" className="relative pb-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            {/* <div className="text-center mb-16">
+              <p
+                className="text-xs tracking-[0.3em] uppercase mb-3"
+                style={{ color: "#8a6f3e", fontFamily: "serif" }}
+              >
+                ✦ The Codex ✦
+              </p>
+              <h2
+                className="text-3xl sm:text-4xl font-bold mb-4"
+                style={{
+                  fontFamily: "'Cinzel', serif",
+                  color: "#e8d5a3",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                Featured Campaigns
+              </h2>
+              <p
+                className="text-sm max-w-md mx-auto mb-6"
+                style={{
+                  fontFamily: "Georgia, serif",
+                  color: "#7a6548",
+                  fontStyle: "italic",
+                }}
+              >
+                Forged by the community. Approved by legend.
+              </p>
+              <OrnamentalDivider className="max-w-xs mx-auto" />
+            </div> */}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              {campaigns.map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  campaign={c}
+                  isOwner={c.createdBy === user?.id}
+                  onPlay={(c) =>
+                    router.push(`/rooms/create?campaignId=${c.id}`)
+                  }
+                />
+              ))}
+            </div>
+
+            <div className="text-center">
+              <Link href="/campaigns">
+                <button
+                  className="px-6 py-3 rounded-xl text-sm transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                  style={{
+                    fontFamily: "'Cinzel', serif",
+                    background: "transparent",
+                    border: "1px solid rgba(200,169,110,0.3)",
+                    color: "#8a6f3e",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Browse All Campaigns →
+                </button>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
