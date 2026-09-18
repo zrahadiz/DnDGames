@@ -32,8 +32,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     });
     try {
       const { data } = await api.get("/auth/me");
-      console.log("userStore: ", data);
-      console.log("userStore2: ", data?.data.user || null);
+      // console.log("userStore: ", data);
+      // console.log("userStore2: ", data?.data.user || null);
 
       set({
         user: data?.data?.user ?? null,
