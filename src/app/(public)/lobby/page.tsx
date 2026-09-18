@@ -25,7 +25,7 @@ import { CampaignWithRelations } from "@/types/campaigns";
 import { CharacterSuggestions } from "@/types/characters";
 import CampaignPickerDialog from "@/components/campaigns/CampaignPickerDialog";
 import OrnamentalDivider from "@/components/ornaments/ornamentalDivider";
-import { RefreshCw, Search, UsersRound } from "lucide-react";
+import { Castle, RefreshCw, Search, Swords, UsersRound } from "lucide-react";
 import JoinRoomDialog from "@/components/rooms/joinRoomDialog";
 import { JoinRoomInput } from "@/types/roomPlayers";
 import { useAuthStore } from "@/stores/auth-store";
@@ -467,7 +467,10 @@ export default function Home() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-              <span className="text-5xl opacity-30">🏰</span>
+              <Castle
+                className="size-12 text-[#8a6f3e] opacity-50"
+                strokeWidth={1.5}
+              />
               <p className="font-cinzel text-lg text-[#5a4830]">
                 No rooms found
               </p>
@@ -477,9 +480,9 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={() => router.push("/rooms/create")}
-                className="mt-2 rounded-xl border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.06)] font-cinzel text-sm tracking-wider text-[#d4b87a] hover:border-[rgba(200,169,110,0.5)] hover:bg-[rgba(200,169,110,0.12)] cursor-pointer"
+                className="mt-2 rounded-xl border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.06)] font-cinzel text-sm tracking-wider text-[#d4b87a] hover:text-[#ffe2a2] hover:border-[rgba(200,169,110,0.5)] hover:bg-[rgba(200,169,110,0.12)] cursor-pointer"
               >
-                ⚔ Open a Room
+                <Swords className="size-4" /> Open a Room
               </Button>
             </div>
           )}
@@ -553,7 +556,7 @@ export default function Home() {
             onClick={() => router.push("/rooms/create")}
             className="rounded-xl border-[rgba(200,169,110,0.4)] bg-[#1a1208] font-cinzel text-sm tracking-wider text-[#d4b87a] shadow-[0_0_24px_rgba(200,169,110,0.12)] hover:border-[rgba(200,169,110,0.6)] hover:bg-[rgba(200,169,110,0.1)] hover:text-[#e8d5a3] hover:-translate-y-1 transition-all duration-200 cursor-pointer px-5 py-3"
           >
-            ⚔ Create Room
+            <Swords className="size-4" /> Create Room
           </Button>
         </div>
       </div>

@@ -27,6 +27,7 @@ import {
 import { CharacterSuggestions } from "@/types/characters";
 import { JoinRoomInput } from "@/types/roomPlayers";
 import { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
+import { Swords } from "lucide-react";
 
 export default function CreateRoom() {
   const [loadingState, setLoadingState] = useState(false);
@@ -285,11 +286,12 @@ export default function CreateRoom() {
                         type="button"
                         variant="outline"
                         onClick={() => setCampaignDialogOpen(true)}
-                        className="w-full h-14 rounded-xl border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.06)] font-cinzel text-sm tracking-wider text-[#d4b87a] hover:border-[rgba(200,169,110,0.55)] hover:bg-[rgba(200,169,110,0.12)] hover:text-[#e8d5a3] transition-all duration-200 cursor-pointer"
+                        className="w-full h-14 rounded-xl border-[rgba(200,169,110,0.3)] bg-[rgba(200,169,110,0.06)] font-cinzel text-sm tracking-wider text-[#d4b87a] hover:text-[#ffe2a2] hover:border-[rgba(200,169,110,0.55)] hover:bg-[rgba(200,169,110,0.12)] transition-all duration-200 cursor-pointer"
                       >
+                        <Swords className="size-4" strokeWidth={1.5} />
                         {selectedCampaign
-                          ? "⚔ Change Campaign"
-                          : "⚔ Select Campaign"}
+                          ? "Change Campaign"
+                          : "Select Campaign"}
                       </Button>
                     </div>
 
@@ -309,7 +311,7 @@ export default function CreateRoom() {
                       type="button"
                       variant="outline"
                       onClick={() => setCreateCampaignOpen(true)}
-                      className="h-14 rounded-xl border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.06)] font-cinzel text-sm tracking-wider text-[#c4b5fd] hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] hover:text-[#e8d5a3] transition-all duration-200 cursor-pointer"
+                      className="h-14 rounded-xl border-[rgba(167,139,250,0.25)] bg-[rgba(124,58,237,0.06)] font-cinzel text-sm tracking-wider text-[#c4b5fd] hover:text-[#d9d0ff] hover:border-[rgba(167,139,250,0.45)] hover:bg-[rgba(124,58,237,0.12)] transition-all duration-200 cursor-pointer"
                     >
                       ✦ Forge New Campaign
                     </Button>
@@ -496,15 +498,16 @@ export default function CreateRoom() {
                     type="button"
                     variant="outline"
                     onClick={() => router.push("/lobby")}
-                    className="flex-1 rounded-xl border-[rgba(200,169,110,0.15)] bg-transparent font-cinzel text-sm tracking-wider text-[#5a4830] hover:border-[rgba(200,169,110,0.3)] hover:text-[#8a6f3e] hover:bg-transparent transition-all cursor-pointer"
+                    className="flex-1 rounded-xl border-[rgba(200,169,110,0.15)] bg-transparent font-cinzel text-sm tracking-wider text-[#5a4830] hover:text-[#8a6f3e]  hover:border-[rgba(200,169,110,0.3)] hover:bg-transparent transition-all cursor-pointer"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 rounded-xl border border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] font-cinzel text-sm tracking-wider text-[#e8d5a3] hover:bg-[rgba(200,169,110,0.2)] hover:border-[rgba(200,169,110,0.6)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                    className="flex-1 rounded-xl border border-[rgba(200,169,110,0.45)] bg-[rgba(200,169,110,0.12)] font-cinzel text-sm tracking-wider text-[#e8d5a3] hover:text-[#ffe2a2] hover:bg-[rgba(200,169,110,0.2)] hover:border-[rgba(200,169,110,0.6)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                   >
-                    ⚔ Open the Gates
+                    <Swords className="size-4" strokeWidth={1.5} /> Open the
+                    Gates
                   </Button>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import type { CampaignForm, CampaignWithRelations } from "@/types/campaigns";
 import api from "@/lib/axios";
 import CampaignCard from "@/components/campaigns/campaignCard";
 import CampaignModal from "@/components/campaigns/campaignModal";
-import { PlusIcon, SearchIcon } from "lucide-react";
+import { PlusIcon, ScrollText, SearchIcon } from "lucide-react";
 import { ThemeSelector } from "@/components/forms/themeSelector";
 import { ThemeOption } from "@/types/theme";
 import { useAuthStore } from "@/stores/auth-store";
@@ -228,12 +228,12 @@ export default function CampaignsPage() {
           {/* Empty state */}
           {campaigns.length === 0 ? (
             <div className="py-20 text-center">
-              <div className="mb-4 text-[40px]">📜</div>
-
+              <div className="flex justify-center mb-4 text-[40px]">
+                <ScrollText className=" size-10  text-[#c8a96e]" />
+              </div>
               <p className=" font-['Cinzel',serif] text-lg text-[#5a4830]">
                 No campaigns found
               </p>
-
               <p className=" mt-2 font-serif text-[13px] italic text-[#3a2a14]">
                 Try different filters, or forge your own.
               </p>

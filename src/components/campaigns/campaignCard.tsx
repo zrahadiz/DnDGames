@@ -117,10 +117,10 @@ export default function CampaignCard({
         </p>
 
         {/* World Setup */}
-        <div className="rounded-[10px] border border-[rgba(200,169,110,0.08)] bg-[rgba(0,0,0,0.2)] p-3">
+        <div className="rounded-[10px] border border-[rgba(200,169,110,0.08)] bg-[rgba(0,0,0,0.2)] p-3 max-h-[100px] overflow-y-auto">
           {campaign.worldSetup &&
             Object.entries(campaign.worldSetup).map(([key, value]) => (
-              <div key={key} className="grid grid-cols-2 gap-2">
+              <div key={key} className="grid grid-cols-2 gap-2 min-h-5">
                 <span className="font-serif text-[#5a4830]">
                   {formatWorldSetupKey(key)}
                 </span>

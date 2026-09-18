@@ -12,7 +12,7 @@ import Loading from "@/components/feedback/loading";
 import { PlayerCard } from "@/components/ui/playerCard";
 import { Button } from "@/components/ui/button";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Swords } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { RoomDetail } from "@/types/rooms";
@@ -382,7 +382,7 @@ export default function WaitingRoom() {
             <Button
               variant="outline"
               onClick={leaveRoomHandler}
-              className="w-full sm:w-auto rounded-xl border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.05)] font-cinzel text-sm tracking-wider text-[#f87171] hover:border-[rgba(239,68,68,0.45)] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer gap-2"
+              className="w-full sm:w-auto rounded-xl border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.05)] font-cinzel text-sm tracking-wider text-[#f87171] hover:text-[#ff5454] hover:border-[rgba(239,68,68,0.45)] hover:bg-[rgba(239,68,68,0.1)] transition-all cursor-pointer gap-2"
             >
               <LogOut className="w-4 h-4" />
               Leave Room
@@ -405,11 +405,8 @@ export default function WaitingRoom() {
                   : undefined
               }
             >
-              {isHost
-                ? "⚔ Start Game"
-                : isPlayerReady
-                  ? "Unready"
-                  : "✦ I'm Ready"}
+              <Swords className="size-4" />
+              {isHost ? "Start Game" : isPlayerReady ? "Unready" : "I'm Ready"}
             </Button>
           </div>
 

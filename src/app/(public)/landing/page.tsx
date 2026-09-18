@@ -23,7 +23,7 @@ const features = [
     icon: <BrainCircuit />,
     title: "AI Dungeon Master",
     desc: "A tireless, infinitely creative intelligence guides your story — reacting to every choice, improvising every moment, never repeating itself.",
-    accent: "#c8a96e",
+    accent: "#c8a96e40",
     border: "rgba(200,169,110,0.25)",
     borderHover: "rgba(200,169,110,0.5)",
   },
@@ -31,7 +31,7 @@ const features = [
     icon: <Swords />,
     title: "Multiplayer Realms",
     desc: "Rally up to six adventurers. Coordinate in real-time, split the party (at your peril), and forge legendary bonds — or bitter rivalries.",
-    accent: "#e8d5a3",
+    accent: "#a78bfa33",
     border: "rgba(167,139,250,0.2)",
     borderHover: "rgba(167,139,250,0.45)",
   },
@@ -39,7 +39,7 @@ const features = [
     icon: <BookOpen />,
     title: "Community Campaigns",
     desc: "Browse hundreds of player-crafted worlds. Rate them, remix them, or publish your own magnum opus for the world to explore.",
-    accent: "#8a6f3e",
+    accent: "#2dd4bf33",
     border: "rgba(45,212,191,0.2)",
     borderHover: "rgba(45,212,191,0.4)",
   },
@@ -47,7 +47,7 @@ const features = [
     icon: <Castle />,
     title: "Campaign Forge",
     desc: "Build intricate maps, write lore, design encounters, and set faction politics. Your imagination is the only limit.",
-    accent: "#f87171",
+    accent: "#f8717133",
     border: "rgba(248,113,113,0.2)",
     borderHover: "rgba(248,113,113,0.4)",
   },
@@ -569,41 +569,6 @@ export default function LandingPage() {
               what they seek."
             </p>
             <OrnamentalDivider className="max-w-xs mx-auto mb-10" />
-
-            {!user && (
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={loginHandle}
-                  disabled={isPending}
-                  className="px-10 py-4 rounded-xl text-base font-bold transition-all duration-200 hover:-translate-y-1 cursor-pointer"
-                  style={{
-                    fontFamily: "'Cinzel', serif",
-                    background: "linear-gradient(135deg, #3d2e10, #2a1f0a)",
-                    border: "1px solid rgba(200,169,110,0.5)",
-                    color: "#e8d5a3",
-                    letterSpacing: "0.1em",
-                    boxShadow:
-                      "0 0 40px rgba(200,169,110,0.15), inset 0 1px 0 rgba(200,169,110,0.2)",
-                  }}
-                >
-                  {isPending ? "Loading..." : "⚔ Enter the Realm"}
-                </button>
-                <button
-                  onClick={loginHandle}
-                  disabled={isPending}
-                  className="px-10 py-4 rounded-xl text-base transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
-                  style={{
-                    fontFamily: "'Cinzel', serif",
-                    background: "transparent",
-                    border: "1px solid rgba(167,139,250,0.3)",
-                    color: "#9a85c4",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {isPending ? "Loading..." : "✦ Wander as a Stranger"}
-                </button>
-              </div>
-            )}
           </div>
         </section>
         {/* // ─── Campaigns ──────────────────────────────────────────────────────────────────── */}
