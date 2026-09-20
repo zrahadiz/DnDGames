@@ -16,18 +16,6 @@ export const rateLimits = {
     prefix: "ratelimit:ai-generation",
   }),
 
-  createRoom: new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(10, "1 h"),
-    prefix: "ratelimit:create-room",
-  }),
-
-  createCampaign: new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(10, "1 h"),
-    prefix: "ratelimit:create-campaign",
-  }),
-
   guestCreation: new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(5, "10 m"),
