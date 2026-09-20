@@ -5,7 +5,8 @@ import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
 import { apiResponse } from "@/types/apiResponse";
 import { updateCampaignSchema } from "@/server/validators/campaigns";
-import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
+import { generateCharacterSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
+import { rateLimits } from "@/lib/rate-limit";
 
 type Params = Promise<{ id: string }>;
 
@@ -54,9 +55,18 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     const currentUser = await requiredUser();
     const { id } = await params;
     const body = await req.json();
-    console.log("body:", body);
     const result = updateCampaignSchema.safeParse(body);
-    console.log("result:", result);
+
+    const { success } = await rateLimits.aiGeneration.limit(
+      currentUser.user.id,
+    );
+
+    if (!success) {
+      return apiResponse(429, {
+        success: false,
+        message: "Too many AI requests. Please try again later.",
+      });
+    }
 
     if (!result.success) {
       return apiResponse(400, {
@@ -106,7 +116,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
           aiCharGenerationStatus: "pending",
         })
         .where(eq(campaigns.id, id));
-      generateCampaignSuggestions(updatedCampaign).catch(console.error);
+      generateCharacterSuggestions(updatedCampaign).catch(console.error);
     }
 
     return apiResponse(200, {

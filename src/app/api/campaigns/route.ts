@@ -5,8 +5,9 @@ import { campaigns } from "@/db/schema";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { createCampaignSchema } from "@/server/validators/campaigns";
 import { apiResponse } from "@/types/apiResponse";
-import { generateCampaignSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
+import { generateCharacterSuggestions } from "@/server/ai/service/generateCharacterSuggestions";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
+import { rateLimits } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -111,13 +112,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: Request) {
   try {
+    const currentUser = await requiredUser();
+
     const body = await req.json();
-
-    // console.log("body:", body);
-
     const result = createCampaignSchema.safeParse(body);
-
-    // console.log("result:", result);
 
     if (!result.success) {
       return apiResponse(400, {
@@ -127,7 +125,16 @@ export async function POST(req: Request) {
       });
     }
 
-    const currentUser = await requiredUser();
+    const { success } = await rateLimits.aiGeneration.limit(
+      currentUser.user.id,
+    );
+
+    if (!success) {
+      return apiResponse(429, {
+        success: false,
+        message: "Too many AI requests. Please try again later.",
+      });
+    }
 
     const [newCampaign] = await db
       .insert(campaigns)
@@ -138,7 +145,7 @@ export async function POST(req: Request) {
       })
       .returning();
 
-    generateCampaignSuggestions(newCampaign).catch(console.error);
+    generateCharacterSuggestions(newCampaign).catch(console.error);
 
     return apiResponse(201, {
       success: true,

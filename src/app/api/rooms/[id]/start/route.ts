@@ -1,6 +1,7 @@
 // /pages/api/rooms/[id]/start.ts
 import { db } from "@/db";
 import { gameEvents, messages, roomPlayers, rooms } from "@/db/schema";
+import { rateLimits } from "@/lib/rate-limit";
 import { generateOpeningNarrative } from "@/server/ai/service/generateOpeningNarrative";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
@@ -11,10 +12,19 @@ type Params = Promise<{ id: string }>;
 
 export async function PATCH(req: Request, { params }: { params: Params }) {
   try {
-    const currentUser = await requiredUser();
-    const userId = currentUser.user.id;
-
     const { id: roomId } = await params;
+    const currentUser = await requiredUser();
+
+    const { success } = await rateLimits.aiGeneration.limit(
+      currentUser.user.id,
+    );
+
+    if (!success) {
+      return apiResponse(429, {
+        success: false,
+        message: "Too many AI requests. Please try again later.",
+      });
+    }
 
     // Check if room exists
     const room = await db.query.rooms.findFirst({
@@ -62,7 +72,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
       });
     }
 
-    if (room.hostId !== userId) {
+    if (room.hostId !== currentUser.user.id) {
       return apiResponse(403, {
         success: false,
         message: "Only the host can start the game",

@@ -1,0 +1,36 @@
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
+
+const redis = Redis.fromEnv();
+
+export const rateLimits = {
+  socketToken: new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    prefix: "ratelimit:socket-token",
+  }),
+
+  aiGeneration: new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "1 m"),
+    prefix: "ratelimit:ai-generation",
+  }),
+
+  createRoom: new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    prefix: "ratelimit:create-room",
+  }),
+
+  createCampaign: new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    prefix: "ratelimit:create-campaign",
+  }),
+
+  guestCreation: new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "10 m"),
+    prefix: "ratelimit:guest-creation",
+  }),
+};

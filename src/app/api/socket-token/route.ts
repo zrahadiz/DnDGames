@@ -2,10 +2,20 @@ import { createSocketToken } from "@/lib/socket-auth";
 import { apiResponse } from "@/types/apiResponse";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
+import { rateLimits } from "@/lib/rate-limit";
 
 export async function GET() {
   try {
     const currentUser = await requiredUser();
+
+    const { success } = await rateLimits.socketToken.limit(currentUser.user.id);
+
+    if (!success) {
+      return apiResponse(429, {
+        success: false,
+        message: "Too many requests. Please try again later.",
+      });
+    }
 
     const token = await createSocketToken(
       currentUser.user.id,

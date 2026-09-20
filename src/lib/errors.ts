@@ -2,18 +2,35 @@ import axios from "axios";
 
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
+    const serverMessage = error.response?.data?.message;
+
     switch (error.response?.status) {
+      case 400:
+        return serverMessage || "Invalid request.";
+
       case 401:
-        return "Unauthorized. Please sign in first.";
+        return serverMessage || "Unauthorized. Please sign in first.";
+
+      case 403:
+        return serverMessage || "You don't have permission to do that.";
 
       case 404:
-        return "The requested resource could not be found.";
+        return serverMessage || "The requested resource could not be found.";
+
+      case 429:
+        return (
+          serverMessage ||
+          "You're doing that too quickly. Please try again shortly."
+        );
 
       case 500:
-        return "Something went wrong on our server. Please try again.";
+        return (
+          serverMessage ||
+          "Something went wrong on our server. Please try again."
+        );
 
       default:
-        return error.response?.data?.message || error.message;
+        return serverMessage || error.message;
     }
   }
 

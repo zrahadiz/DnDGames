@@ -4,6 +4,8 @@ import { socket } from "@/lib/socket-client";
 import { ApiResponse } from "@/types/apiResponse";
 import api from "@/lib/axios";
 import axios from "axios";
+import { toast } from "@/lib/toast";
+import { getErrorMessage } from "@/lib/errors";
 
 type SocketContextType = typeof socket;
 
@@ -30,8 +32,21 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           socket.connect();
         }
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          return;
+        if (axios.isAxiosError(error)) {
+          const status = error.response?.status;
+
+          // No active session — don't show an error
+          if (status === 401) {
+            return;
+          }
+
+          // User should know they're being rate limited
+          if (status === 429) {
+            toast(getErrorMessage(error), {
+              type: "error",
+            });
+            return;
+          }
         }
 
         console.error("Socket connection failed:", error);

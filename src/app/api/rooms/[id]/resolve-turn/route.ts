@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { gameEvents, rooms } from "@/db/schema";
+import { rateLimits } from "@/lib/rate-limit";
 import { generateTurnNarration } from "@/server/ai/service/generateTurnNarration";
 import { requiredUser } from "@/server/auth/requiredUser";
 import { UnauthorizedError } from "@/server/errors/unauthorized";
@@ -11,8 +12,19 @@ type Params = Promise<{ id: string }>;
 
 export async function POST(req: Request, { params }: { params: Params }) {
   try {
-    const currentUser = await requiredUser();
     const { id: roomId } = await params;
+    const currentUser = await requiredUser();
+
+    const { success } = await rateLimits.aiGeneration.limit(
+      currentUser.user.id,
+    );
+
+    if (!success) {
+      return apiResponse(429, {
+        success: false,
+        message: "Too many AI requests. Please try again later.",
+      });
+    }
 
     const room = await db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),

@@ -9,7 +9,7 @@ import { promptCharacterSuggestions } from "@/server/ai/prompts/characterSuggest
 import { aiSuggestionSchema } from "@/server/validators/ai";
 import { Campaign } from "@/types/campaigns";
 
-export async function generateCampaignSuggestions(campaign: Campaign) {
+export async function generateCharacterSuggestions(campaign: Campaign) {
   try {
     await db
       .update(campaigns)
