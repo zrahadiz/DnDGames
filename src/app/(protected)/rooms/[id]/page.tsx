@@ -230,7 +230,7 @@ export default function Room() {
       });
       // console.log("Kick player response:", data);
       if (data.success) {
-        console.log("Emitting sync_room_state after kicking player");
+        // console.log("Emitting sync_room_state after kicking player");
         socket.emit("sync_room_state", {
           roomId,
           kick: true,
@@ -246,7 +246,7 @@ export default function Room() {
 
   useEffect(() => {
     const handleRoomUpdate = (update: RoomUpdate) => {
-      console.log("Received room update:", update);
+      // console.log("Received room update:", update);
       switch (update.type) {
         case "room_state_updated":
           if (update.kick) {

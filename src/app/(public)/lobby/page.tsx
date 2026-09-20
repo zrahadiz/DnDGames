@@ -226,7 +226,7 @@ export default function Home() {
     fetchRooms();
 
     socket.on("connect", () => {
-      console.log("connected:", socket.id);
+      console.log("Socket connected");
     });
 
     socket.on("error_message", (msg: string) => {

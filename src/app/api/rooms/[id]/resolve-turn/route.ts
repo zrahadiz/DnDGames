@@ -134,7 +134,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
       actions: actionsForAi,
     });
 
-    console.log("AI result: ", aiResult);
+    // console.log("AI result: ", aiResult);
     const isGameOver = aiResult.outcome !== "ongoing";
 
     const allowedCharacterIds = new Set(

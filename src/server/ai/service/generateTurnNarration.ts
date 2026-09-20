@@ -14,7 +14,7 @@ export async function generateTurnNarration({
   actions: TurnActionContext[];
 }) {
   const gameContext = await roomContext(room);
-  console.log("Game context for AI:", gameContext);
+  // console.log("Game context for AI:", gameContext);
 
   const prompt = `
   You are the Dungeon Master of a tabletop RPG.
@@ -88,7 +88,7 @@ export async function generateTurnNarration({
   `;
   // I want to test the finished game, so please provide a response with "victory" outcome with an ending title and summary, no matter what my input is.
 
-  console.log("turn Prompt: ", prompt);
+  // console.log("turn Prompt: ", prompt);
 
   const response = await generateAiResponse({
     prompt,
@@ -96,7 +96,7 @@ export async function generateTurnNarration({
 
   const result = aiTurnResultSchema.parse(response);
 
-  console.log("Parsed AI result:", result);
+  // console.log("Parsed AI result:", result);
 
   return result;
 }

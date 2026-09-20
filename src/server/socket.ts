@@ -124,11 +124,11 @@ async function ensureActiveHost(roomId: string, preferredUserId?: string) {
       })
       .where(eq(rooms.id, roomId));
 
-    console.log("Host reassigned:", {
-      roomId,
-      previousHostId: room.hostId,
-      newHostId: nextHost.userId,
-    });
+    // console.log("Host reassigned:", {
+    //   roomId,
+    //   previousHostId: room.hostId,
+    //   newHostId: nextHost.userId,
+    // });
   });
 }
 
@@ -169,9 +169,7 @@ export async function transferHostIfNeeded(
     });
 
     if (!newHost) {
-      console.log("No connected player available for host transfer", {
-        roomId,
-      });
+      console.log("No connected player available for host transfer");
 
       return null;
     }
@@ -205,11 +203,7 @@ export async function transferHostIfNeeded(
       })
       .where(eq(roomPlayers.id, newHost.id));
 
-    console.log("Host transferred:", {
-      roomId,
-      oldHostId: leavingUserId,
-      newHostId: newHost.userId,
-    });
+    console.log("Host transferred");
 
     return newHost.userId;
   });
@@ -219,10 +213,10 @@ io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
 
-    console.log("Socket auth attempt:", {
-      socketId: socket.id,
-      hasToken: !!token,
-    });
+    // console.log("Socket auth attempt:", {
+    //   socketId: socket.id,
+    //   hasToken: !!token,
+    // });
 
     if (!token || typeof token !== "string") {
       return next(new Error("Unauthorized"));
@@ -230,11 +224,11 @@ io.use(async (socket, next) => {
 
     const authData = await verifySocketToken(token);
 
-    console.log("Socket authenticated:", {
-      socketId: socket.id,
-      userId: authData.userId,
-      type: authData.type,
-    });
+    // console.log("Socket authenticated:", {
+    //   socketId: socket.id,
+    //   userId: authData.userId,
+    //   type: authData.type,
+    // });
 
     socket.data.user = {
       type: authData.type,
@@ -259,13 +253,12 @@ io.on("connection", (socket) => {
   //   type: socket.data.user?.type,
   //   socketId: socket.id,
   // });
-  console.log("total connections:", io.engine.clientsCount);
+  // console.log("total connections:", io.engine.clientsCount);
 
   socket.on("test", async ({ roomId }) => {
     const currentUser = socket.data.user;
     if (!currentUser) return;
-    const userId = currentUser.user.id;
-    console.log("Test event received:", { roomId, userId });
+    // console.log("Test event received:", { roomId, userId });
   });
 
   socket.on(
@@ -307,11 +300,11 @@ io.on("connection", (socket) => {
       event: GameEventWithRelations;
       turnProgress: TurnProgress;
     }) => {
-      console.log("game_event_created full", event);
-      console.log("game_event_created received", {
-        roomId,
-        eventId: event.id,
-      });
+      // console.log("game_event_created full", event);
+      // console.log("game_event_created received", {
+      //   roomId,
+      //   eventId: event.id,
+      // });
 
       io.to(`room_${roomId}`).emit("game_event_created", {
         event,
@@ -379,12 +372,12 @@ io.on("connection", (socket) => {
         room,
       });
 
-      console.log("User joined room:", {
-        userId,
-        roomId,
-        socketId: socket.id,
-        hostId: room.hostId,
-      });
+      // console.log("User joined room:", {
+      //   userId,
+      //   roomId,
+      //   socketId: socket.id,
+      //   hostId: room.hostId,
+      // });
     } catch (error) {
       console.error("Failed to join room:", error);
 
@@ -443,10 +436,10 @@ io.on("connection", (socket) => {
 
         // Another tab/device is still connected to this room.
         if (stillConnected) {
-          console.log("User still has another socket connected:", {
-            userId,
-            roomId,
-          });
+          // console.log("User still has another socket connected:", {
+          //   userId,
+          //   roomId,
+          // });
 
           callback?.({ success: true });
           return;
@@ -459,11 +452,11 @@ io.on("connection", (socket) => {
         // Transfer host if necessary.
         const newHostId = await transferHostIfNeeded(roomId, userId);
 
-        console.log("Player left room:", {
-          userId,
-          roomId,
-          newHostId,
-        });
+        // console.log("Player left room:", {
+        //   userId,
+        //   roomId,
+        //   newHostId,
+        // });
 
         // Get the updated room state.
         const room = await getRoomState(roomId);
@@ -572,5 +565,5 @@ io.on("connection", (socket) => {
 setIO(io);
 
 httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`Socket.IO running on port ${PORT}`);
+  console.log("Socket.IO running");
 });

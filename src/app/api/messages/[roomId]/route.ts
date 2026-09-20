@@ -108,7 +108,7 @@ export async function POST(req: Request, { params }: { params: Params }) {
     }
 
     const result = createMessageSchema.safeParse(body);
-    console.log("result:", result);
+    // console.log("result:", result);
 
     if (!result.success) {
       return apiResponse(400, {

@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: { params: Params }) {
     await requiredUser();
 
     const { id } = await params;
-    console.log("Fetching campaign with ID:", id);
+    // console.log("Fetching campaign with ID:", id);
 
     const campaign = await db.query.campaigns.findFirst({
       where: eq(campaigns.id, id),

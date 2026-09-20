@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    console.log("body:", body);
+    // console.log("body:", body);
 
     const result = joinRoomSchema.safeParse(body);
 
-    console.log("result:", result);
+    // console.log("result:", result);
 
     if (!result.success) {
       return apiResponse(400, {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       if (count >= room.maxPlayers) throw new Error("ROOM_FULL");
 
       const isHost = !room.hostId;
-      console.log("isHost:", isHost);
+      // console.log("isHost:", isHost);
 
       if (isHost) {
         await tx

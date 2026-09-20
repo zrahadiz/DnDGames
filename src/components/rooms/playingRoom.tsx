@@ -504,7 +504,7 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const handleSpeak = (messageId: string, text: string) => {
-    console.log("Starting speech synthesis...", messageId);
+    // console.log("Starting speech synthesis...", messageId);
 
     if (typeof window === "undefined" || !window.speechSynthesis) {
       toast("Text-to-speech is not supported.", {
@@ -568,7 +568,7 @@ export function GameEventCard({ msg }: { msg: GameEventWithRelations }) {
   };
 
   const handleStop = () => {
-    console.log("Stopping speech synthesis...");
+    // console.log("Stopping speech synthesis...");
 
     if (typeof window === "undefined" || !window.speechSynthesis) {
       return;

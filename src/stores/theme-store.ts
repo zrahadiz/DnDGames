@@ -33,7 +33,7 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
       });
 
       const { data } = await api.get("/master-theme");
-      console.log("theme: ", data);
+      // console.log("theme: ", data);
 
       set({
         themes: data.data,

@@ -22,7 +22,7 @@ export async function generateAiResponse({
 
     const text = response.text ?? "";
 
-    console.log("Raw AI response:", text);
+    // console.log("Raw AI response:", text);
 
     // remove markdown json wrapper
     const cleaned = text

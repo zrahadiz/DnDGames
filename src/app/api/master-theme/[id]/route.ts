@@ -66,9 +66,9 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     }
     const { id } = await params;
     const body = await req.json();
-    console.log("body:", body);
+    // console.log("body:", body);
     const result = updateThemeSchema.safeParse(body);
-    console.log("result:", result);
+    // console.log("result:", result);
 
     if (!result.success) {
       return apiResponse(400, {

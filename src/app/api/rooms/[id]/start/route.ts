@@ -102,7 +102,7 @@ export async function PATCH(req: Request, { params }: { params: Params }) {
     }
 
     const aiResults = await generateOpeningNarrative(room);
-    console.log("AI results for opening narrative:", aiResults);
+    // console.log("AI results for opening narrative:", aiResults);
 
     const data = await db.transaction(async (tx) => {
       const [updatedRoom] = await tx

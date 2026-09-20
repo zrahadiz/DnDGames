@@ -135,7 +135,7 @@ export default function WaitingRoom() {
       setLoadingText("Updating status...");
       try {
         const { data } = await api.patch(`/rooms/${roomId}/toggle-ready`);
-        console.log("Toggled ready status:", data);
+        // console.log("Toggled ready status:", data);
         if (data.success) {
           console.log("Emitting sync_room_state after leaving room");
           socket.emit("sync_room_state", {

@@ -11,7 +11,7 @@ export async function generateOpeningNarrative(roomDetail: RoomContext) {
       prompt,
     });
 
-    console.log("Generated opening narrative:", response);
+    // console.log("Generated opening narrative:", response);
     return response;
   } catch (error) {
     console.error("Failed to generate opening narrative:", error);

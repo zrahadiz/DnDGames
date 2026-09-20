@@ -50,7 +50,7 @@ export async function DELETE(req: Request, { params }: { params: Params }) {
       //if host is leaving, assign new host or delete room if no players left
       if (player.role === "host") {
         // Remove host and assign new host
-        console.log("Host is leaving the room:", roomId);
+        // console.log("Host is leaving the room:", roomId);
         const nextHost = await tx.query.roomPlayers.findFirst({
           where: and(
             eq(roomPlayers.roomId, roomId),
