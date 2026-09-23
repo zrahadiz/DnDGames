@@ -6,7 +6,7 @@ import { socket } from "@/lib/socket-client";
 
 import api from "@/lib/axios";
 
-import lavaKnight from "@/assets/images/lavaKnight.png";
+import Character from "@/assets/images/character.svg";
 
 import Loading from "@/components/feedback/loading";
 import { PlayerCard } from "@/components/ui/playerCard";
@@ -366,7 +366,7 @@ export default function WaitingRoom() {
                     key={player.userId}
                     name={player.character?.name || "Unknown"}
                     status={player.isReady}
-                    avatarUrl={lavaKnight}
+                    avatarUrl={Character}
                     onKick={() => kickPlayerHandler(player.userId)}
                     canKick={isHost && player.role !== "host"}
                     isHost={player.role === "host"}

@@ -355,10 +355,11 @@ export default function LandingPage() {
                 >
                   <div className="flex items-center space-x-2">
                     {f.icon && (
-                      <div className={`text-xl mb-4 text-[${f.accent}]`}>
+                      <div className="text-xl mb-4" style={{ color: f.accent }}>
                         {f.icon}
                       </div>
                     )}
+
                     <h3
                       className="text-base text-justify font-bold mb-3"
                       style={{

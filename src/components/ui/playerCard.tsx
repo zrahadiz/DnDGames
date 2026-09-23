@@ -60,7 +60,7 @@ export function PlayerCard({
 
       {/* Avatar */}
       <div
-        className="relative w-16 h-16 rounded-full overflow-hidden border-2"
+        className="relative w-16 h-16 rounded-full overflow-hidden border-2 bg-[#1a1208]"
         style={{
           borderColor: isHost
             ? "rgba(200,169,110,0.5)"
@@ -73,7 +73,7 @@ export function PlayerCard({
           src={avatarUrl}
           alt={`${name} character`}
           fill
-          className="object-cover"
+          className="object-contain"
         />
       </div>
 
