@@ -173,6 +173,7 @@ export default function LandingPage() {
           />
 
           {/* Badge */}
+          {/*
           <div
             className="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full"
             style={{
@@ -180,8 +181,8 @@ export default function LandingPage() {
               background: "rgba(200,169,110,0.06)",
             }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            {/* <span
+             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span
               style={{
                 fontFamily: "'Cinzel', serif",
                 fontSize: "11px",
@@ -190,8 +191,9 @@ export default function LandingPage() {
               }}
             >
               AI DUNGEON MASTER AWAITS
-            </span> */}
+            </span> 
           </div>
+          */}
           {/* Headline */}
           <h1
             className="mb-6 leading-tight"
