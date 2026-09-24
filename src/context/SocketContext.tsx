@@ -6,19 +6,34 @@ import api from "@/lib/axios";
 import axios from "axios";
 import { toast } from "@/lib/toast";
 import { getErrorMessage } from "@/lib/errors";
+import { useAuthStore } from "@/stores/auth-store";
 
 type SocketContextType = typeof socket;
 
 const SocketContext = createContext<SocketContextType | null>(null);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
+  const user = useAuthStore((state) => state.user);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const isFetched = useAuthStore((state) => state.isFetched);
+
   useEffect(() => {
+    if (!isFetched || isLoading) return;
+
+    if (!user) {
+      socket.disconnect();
+      return;
+    }
+
+    let cancelled = false;
+
     const connectSocket = async () => {
       try {
         const { data } =
           await api.get<ApiResponse<{ token: string }>>("/socket-token");
 
         // console.log("socket token result:", data);
+        if (cancelled) return;
 
         if (!data.success || !data.data?.token) {
           throw new Error(data.message ?? "Failed to authenticate socket");
@@ -54,7 +69,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     };
 
     connectSocket();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, isFetched, isLoading]);
 
+  useEffect(() => {
     const onConnect = () => {
       console.log("✅ Connected");
     };

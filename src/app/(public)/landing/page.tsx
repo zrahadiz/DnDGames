@@ -181,7 +181,7 @@ export default function LandingPage() {
             }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span
+            {/* <span
               style={{
                 fontFamily: "'Cinzel', serif",
                 fontSize: "11px",
@@ -190,7 +190,7 @@ export default function LandingPage() {
               }}
             >
               AI DUNGEON MASTER AWAITS
-            </span>
+            </span> */}
           </div>
           {/* Headline */}
           <h1

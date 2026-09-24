@@ -15,7 +15,10 @@ type AuthStore = {
   isFetched: boolean;
 
   fetchUser: () => Promise<void>;
-  setUser: (user: Users | null) => void;
+  setUser: (
+    user: Users | null,
+    authType: "guest" | "registered" | null,
+  ) => void;
   logout: () => Promise<void>;
 };
 
@@ -56,9 +59,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
 
-  setUser: (user) => {
+  setUser: (user, authType) => {
     set({
       user,
+      authType,
       isFetched: true,
     });
   },

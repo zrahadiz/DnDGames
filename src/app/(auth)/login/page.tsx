@@ -13,10 +13,12 @@ import GoogleIcon from "@/components/icons/googleIcon";
 import D20Icon from "@/components/icons/d20Icon";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/auth-store";
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function LoginPage() {
   const authClient = createAuthClient();
+  const setUser = useAuthStore((state) => state.setUser);
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null);
   const router = useRouter();
 
@@ -63,7 +65,9 @@ export default function LoginPage() {
     setLoadingText("Summoning a Stranger...");
     try {
       const { data } = await api.post("/auth/guest");
-      if (data.success) {
+      if (data.success && data.data?.user) {
+        // console.log("guestLogin: ", data.data.user);
+        setUser(data.data.user, "guest");
         router.replace("/lobby");
       }
       // console.log("Guest login response:", data);
